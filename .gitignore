@@ -1,0 +1,4 @@
+/.vscode
+/builddir
+/*.sh
+/tests
