@@ -58,7 +58,8 @@ typedef union {
 typedef struct {
     uint8_t    rep;            /* REP/LOCK prefix. */
     x64rex_t   rex;
-    bool       address;        /* address-size override prefix 0x67. */
+    bool       operand_sz;     /* operand-size override prefix 0x66. */
+    bool       address_sz;     /* address-size override prefix 0x67. */
     uint8_t    opcode[3];
     x64modrm_t modrm;          /* ModR/M byte. */
     x64sib_t   sib;            /* SIB byte. */

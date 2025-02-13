@@ -93,9 +93,9 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             void *dest = x64modrm_dest_rm(emu, ins);
             if (!src || !dest) return false;
             if (ins->rex.w)
-                *(uint64_t *)dest = (*(uint64_t *)src);
+                *(uint64_t *)dest = *(uint64_t *)src;
             else
-                *(uint32_t *)dest = (*(uint32_t *)src);
+                *(uint32_t *)dest = *(uint32_t *)src;
             break;
         }
 
