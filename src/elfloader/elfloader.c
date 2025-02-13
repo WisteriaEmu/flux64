@@ -47,8 +47,8 @@ static char *check_elf_header(Elf64_Ehdr *ehdr) {
     // if (ehdr->e_version != EV_CURRENT)
     //     return "Not a valid ELF version";
 
-    log_dump("ph: num: %d, size: %d, off: 0x%lx, "
-             "sh: num: %d, size: %d, off: 0x%lx, entry: 0x%lx",
+    log_dump("ph: num: %d, size: %d, off: 0x%llx, "
+             "sh: num: %d, size: %d, off: 0x%llx, entry: 0x%llx",
              ehdr->e_phnum, ehdr->e_phentsize, ehdr->e_phoff,
              ehdr->e_shnum, ehdr->e_shentsize, ehdr->e_shoff, ehdr->e_entry);
 
@@ -122,15 +122,15 @@ static bool load_program_headers(x64context_t *ctx, FILE *fd, Elf64_Ehdr *ehdr) 
 
     for (Elf64_Half i = 0; i < ehdr->e_phnum; i++) {
         Elf64_Phdr *ph = phdrs + i;
-        log_dump("Program header: type: 0x%x, flags: 0x%x, offset: 0x%lx, vaddr: 0x%lx, "
-                 "paddr: 0x%lx\nfilesz: 0x%lx, memsz: 0x%lx, align: 0x%lx",
+        log_dump("Program header: type: 0x%x, flags: 0x%x, offset: 0x%llx, vaddr: 0x%llx, "
+                 "paddr: 0x%llx\nfilesz: 0x%llx, memsz: 0x%llx, align: 0x%llx",
                  ph->p_type, ph->p_flags, ph->p_offset, ph->p_vaddr, ph->p_paddr,
                  ph->p_filesz, ph->p_memsz, ph->p_align);
 
         if (need_to_load(ph)) {
             /* FIXME: workaround would be simple, but not implemented yet... */
             if (ph->p_align & (ctx->page_size - 1)) {
-                log_err("Mapping segment with 0x%lx alignment on 0x%lx page size is currently unsupported", ph->p_align, ctx->page_size);
+                log_err("Mapping segment with 0x%llx alignment on 0x%lx page size is currently unsupported", ph->p_align, ctx->page_size);
                 return false;
             }
 
@@ -144,7 +144,7 @@ static bool load_program_headers(x64context_t *ctx, FILE *fd, Elf64_Ehdr *ehdr) 
 
             int prot = p_flags_to_prot(ph->p_flags);
 
-            log_dump("Mapping segment at 0x%lx, size 0x%lx, offset 0x%lx, prot 0x%x",
+            log_dump("Mapping segment at 0x%llx, size 0x%llx, offset 0x%llx, prot 0x%x",
                         aligned_addr, aligned_size, aligned_offs, prot);
 
             void *ret = mmap((void *)aligned_addr, aligned_size,
