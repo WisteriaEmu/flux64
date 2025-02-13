@@ -1,6 +1,7 @@
 #ifndef __X64INSTR_H_
 #define __X64INSTR_H_
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "x64regs.h"
@@ -55,13 +56,14 @@ typedef union {
  * Decoded x86_64 instruction.
  */
 typedef struct {
-    uint8_t rep; /* REP/LOCK prefix. */
-    x64rex_t rex;
-    uint8_t opcode[3];
-    x64modrm_t modrm;
-    x64sib_t sib;
-    reg64_t displ; /* address displacement */
-    reg64_t imm; /* immediate data */
+    uint8_t    rep;            /* REP/LOCK prefix. */
+    x64rex_t   rex;
+    bool       address;        /* address-size override prefix 0x67. */
+    uint8_t    opcode[3];
+    x64modrm_t modrm;          /* ModR/M byte. */
+    x64sib_t   sib;            /* SIB byte. */
+    reg64_t    displ;          /* address displacement. */
+    reg64_t    imm;            /* immediate data. */
 } x64instr_t;
 
 /* fetch N bits of instruction. */

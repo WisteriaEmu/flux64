@@ -17,15 +17,18 @@ static inline uint8_t decode_prefixes(x64emu_t *emu, x64instr_t *ins) {
     while (1) {
         uint8_t byte = fetch_8();
         switch (byte) {
-            case 0xF0 ... 0xF3:
+            case 0x40 ... 0x4F:  /* REX prefix. */
+                ins->rex.byte = byte;
+                break;
+            case 0x67:           /* address-size override prefix. */
+                ins->address = true;
+                break;
+            case 0xF0 ... 0xF3:  /* REP/LOCK prefix. */
                 if (byte == 0xF0) {
                     log_err("Unimplemented LOCK prefix");
                     return false;
                 }
                 ins->rep = byte;
-                break;
-            case 0x40 ... 0x4F:
-                ins->rex.byte = byte;
                 break;
             default:
                 return byte;
