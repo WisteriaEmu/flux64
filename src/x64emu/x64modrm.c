@@ -7,38 +7,7 @@
 
 SET_DEBUG_CHANNEL("X64MODRM")
 
-/**
- * Decode SIB byte of the current instruction.
- */
-static inline void x64sib_fetch(x64emu_t *emu, x64instr_t *ins) {
-    ins->sib.byte = fetch_8();
-}
-
-/* https://wiki.osdev.org/X86-64_Instruction_Encoding#32/64-bit_addressing_2 */
-
-static inline uint64_t x64sib_get_index(x64emu_t *emu, x64instr_t *ins) {
-    return (!ins->rex.x && ins->sib.index == 4) ? 0 : ins->sib.index;
-}
-
-/* Calculate the SIB address (mod 00). */
-static inline uint64_t x64sib_calculate00(x64emu_t *emu, x64instr_t *ins) {
-    return (x64sib_get_index(emu, ins) << ins->sib.scale) +
-           (ins->sib.base == 5) ? ins->displ.sdword[0] : ins->sib.base;
-}
-
-/* Calculate the SIB address (mod 01). */
-static inline uint64_t x64sib_calculate01(x64emu_t *emu, x64instr_t *ins) {
-    return (x64sib_get_index(emu, ins) << ins->sib.scale) +
-           ins->sib.base + ins->displ.sbyte[0];
-}
-
-/* Calculate the SIB address (mod 10). */
-static inline uint64_t x64sib_calculate10(x64emu_t *emu, x64instr_t *ins) {
-    return (x64sib_get_index(emu, ins) << ins->sib.scale) +
-           ins->sib.base + ins->displ.sdword[0];
-}
-
-void  x64modrm_fetch(x64emu_t *emu, x64instr_t *ins) {
+void x64modrm_fetch(x64emu_t *emu, x64instr_t *ins) {
     ins->modrm.byte = fetch_8();
 
     /* 11 - Register-direct addressing mode. */
@@ -61,6 +30,32 @@ void  x64modrm_fetch(x64emu_t *emu, x64instr_t *ins) {
     }
 }
 
+/* https://wiki.osdev.org/X86-64_Instruction_Encoding#32/64-bit_addressing_2 */
+
+/** Index register value or 0 for X.Index 0.100. */
+static inline uint64_t x64sib_get_index(x64emu_t *emu, x64instr_t *ins) {
+    return (!ins->rex.x && ins->sib.index == 4) ? 0 :
+            r_reg64(ins->sib.index | (ins->rex.x << 3));
+}
+
+/** Base register value. */
+static inline uint64_t x64sib_get_base(x64emu_t *emu, x64instr_t *ins) {
+    return r_reg64(ins->sib.base | (ins->rex.b << 3));
+}
+
+/** The SIB address (mod 00). */
+static inline uint64_t x64sib_calculate00(x64emu_t *emu, x64instr_t *ins) {
+    return (x64sib_get_index(emu, ins) << ins->sib.scale) +
+           ((ins->sib.base == 5) ? ins->displ.sdword[0] :
+            x64sib_get_base(emu, ins));
+}
+
+/** The SIB address (mod 01 or 10). */
+static inline uint64_t x64sib_calculate01(x64emu_t *emu, x64instr_t *ins) {
+    /* displacement is added later. */
+    return (x64sib_get_index(emu, ins) << ins->sib.scale) + x64sib_get_base(emu, ins);
+}
+
 void *x64modrm_get_reg(x64emu_t *emu, x64instr_t *ins) {
     return emu->regs + (ins->modrm.reg | (ins->rex.r << 3));
 }
@@ -71,7 +66,7 @@ static inline uint64_t get_raw_rm(x64emu_t *emu, x64instr_t *ins) {
 
 void *x64modrm_get_rm(x64emu_t *emu, x64instr_t *ins) {
     if (ins->address_sz) {
-        log_err("32 bit addressing ModR/M still not implemented.");
+        log_err("32 bit addressing ModR/M still not covered.");
         return NULL;
     }
 
@@ -91,7 +86,7 @@ void *x64modrm_get_rm(x64emu_t *emu, x64instr_t *ins) {
                     get_raw_rm(emu, ins)) + ins->displ.sbyte[0]);
 
         case 0x2:     /* 10 */                /* [(r/m or SIB) + disp32] */
-            return (void *)(((ins->modrm.rm == 4) ? x64sib_calculate10(emu, ins) :
+            return (void *)(((ins->modrm.rm == 4) ? x64sib_calculate01(emu, ins) :
                     get_raw_rm(emu, ins)) + ins->displ.sdword[0]);
 
         case 0x3:     /* 11 */                /* r/m */
