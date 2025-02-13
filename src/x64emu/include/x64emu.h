@@ -12,7 +12,8 @@
  */
 typedef struct x64emu_s {
     x64context_t *ctx;
-    reg64_t       regs[17]; /* 16 registers and instruction pointer */
+    reg64_t       regs[16]; /* 16 general-purpose registers. */
+    reg64_t       rip;      /* Instruction pointer. */
 } x64emu_t;
 
 /**

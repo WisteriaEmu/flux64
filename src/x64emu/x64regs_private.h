@@ -35,7 +35,7 @@ enum {
 #define r_r14  emu->regs[_r14].qword[0]
 #define r_r15  emu->regs[_r15].qword[0]
 
-#define r_rip  emu->regs[_rip].qword[0]
+#define r_rip  emu->rip.qword[0]
 
 /* bytes 0-3 */
 #define r_eax  emu->regs[_rax].dword[0]
@@ -56,7 +56,7 @@ enum {
 #define r_r14d emu->regs[_r14].dword[0]
 #define r_r15d emu->regs[_r15].dword[0]
 
-#define r_eip  emu->regs[_rip].dword[0]
+#define r_eip  emu->rip.dword[0]
 
 /* bytes 0-1 */
 #define r_ax   emu->regs[_rax].word[0]

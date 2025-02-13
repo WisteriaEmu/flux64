@@ -36,6 +36,7 @@ bool x64emu_init(x64emu_t *emu, x64context_t *ctx) {
     r_rdi = ctx->argc;
     r_rsi = r_rsp + 8; /* argv */
     r_rdx = r_rsi + 8 * (ctx->argc + 1); /* envp */
+    /* NOTE: rbp (frame pointer) is initialized to 0. */
     r_rip = ctx->entry;
 
     return true;

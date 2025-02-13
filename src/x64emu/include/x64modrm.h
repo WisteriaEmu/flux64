@@ -1,8 +1,6 @@
 #ifndef __X64MODRM_H_
 #define __X64MODRM_H_
 
-#include <stdint.h>
-
 #include "x64emu.h"
 #include "x64instr.h"
 

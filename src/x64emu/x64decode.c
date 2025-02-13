@@ -31,6 +31,7 @@ static inline uint8_t decode_prefixes(x64emu_t *emu, x64instr_t *ins) {
                     log_err("Unimplemented LOCK prefix");
                     return false;
                 }
+                log_dump("REP %02X", byte);
                 ins->rep = byte;
                 break;
             default:
@@ -89,7 +90,8 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0xE8:           /* CALL rel32 */
-            ins->displ.dword[0] = fetch_32();
+            /* rel32 is immediate data */
+            ins->imm.dword[0] = fetch_32();
             break;
 
         default:
