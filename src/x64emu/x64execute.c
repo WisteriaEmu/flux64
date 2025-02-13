@@ -15,7 +15,7 @@ static inline bool x64execute_83(x64emu_t *emu, x64instr_t *ins) {
     switch (ins->modrm.reg) {
         case 0x4: {          /* AND r/m,imm8 */
             /* FIXME: Handle flags. */
-            void *dest = x64modrm_dest_rm(emu, ins);
+            void *dest = x64modrm_get_rm(emu, ins);
             if (!dest) return false;
             /* imm8 is sign-extended. */
             if (ins->rex.w)
@@ -36,7 +36,7 @@ static inline bool x64execute_83(x64emu_t *emu, x64instr_t *ins) {
 static inline bool x64execute_C7(x64emu_t *emu, x64instr_t *ins) {
     switch (ins->modrm.reg) {
         case 0x0: {          /* MOV r/m16/32/64,imm16/32/32 */
-            void *dest = x64modrm_dest_rm(emu, ins);
+            void *dest = x64modrm_get_rm(emu, ins);
             if (!dest) return false;
             /* imm32 is sign-extended */
             if (ins->rex.w)
@@ -65,8 +65,8 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
 
         case 0x31: {         /* XOR r/m16/32/64,r16/32/64 */
             /* FIXME: Handle flags. */
-            void *src  = x64modrm_src_reg(emu, ins);
-            void *dest = x64modrm_dest_rm(emu, ins);
+            void *src  = x64modrm_get_reg(emu, ins);
+            void *dest = x64modrm_get_rm(emu, ins);
             if (!src || !dest) return false;
             if (ins->rex.w)
                 *(uint64_t *)dest ^= *(uint64_t *)src;
@@ -87,14 +87,26 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             r_reg64((op & 7) | (ins->rex.b << 3)) = pop_64(emu);
             break;
 
+        case 0x63:           /* MOVSXD r16/32/64,r/m16/32/32 */
+            void *src  = x64modrm_get_rm(emu, ins);
+            void *dest = x64modrm_get_reg(emu, ins);
+            if (!src || !dest) return false;
+            if (ins->rex.w)
+                *(int64_t *)dest = *(int32_t *)src;
+            else if (ins->operand_sz)
+                *(int16_t *)dest = *(int16_t *)src;
+            else
+                *(int32_t *)dest = *(int32_t *)src;
+            break;
+
         case 0x83:           /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m,imm8 */
             if (!x64execute_83(emu, ins))
                 return false;
             break;
 
         case 0x89: {         /* MOV r/m16/32/64,r16/32/64 */
-            void *src  = x64modrm_src_reg(emu, ins);
-            void *dest = x64modrm_dest_rm(emu, ins);
+            void *src  = x64modrm_get_reg(emu, ins);
+            void *dest = x64modrm_get_rm(emu, ins);
             if (!src || !dest) return false;
             if (ins->rex.w)
                 *(uint64_t *)dest = *(uint64_t *)src;

@@ -12,7 +12,7 @@ void  x64modrm_fetch(x64emu_t *emu, x64instr_t *ins) {
     ins->modrm.byte = fetch_8();
 }
 
-void *x64modrm_src_reg(x64emu_t *emu, x64instr_t *ins) {
+void *x64modrm_get_reg(x64emu_t *emu, x64instr_t *ins) {
     switch (ins->modrm.mod) {
         case 0x3:
             return emu->regs + (ins->modrm.reg | (ins->rex.b << 3));
@@ -23,7 +23,7 @@ void *x64modrm_src_reg(x64emu_t *emu, x64instr_t *ins) {
     return NULL;
 }
 
-void *x64modrm_dest_rm(x64emu_t *emu, x64instr_t *ins) {
+void *x64modrm_get_rm(x64emu_t *emu, x64instr_t *ins) {
     switch (ins->modrm.mod) {
         case 0x3:
             return emu->regs + (ins->modrm.rm | (ins->rex.b << 3));

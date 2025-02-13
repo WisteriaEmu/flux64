@@ -58,6 +58,10 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
         case 0x50 ... 0x5F:  /* PUSH/POP+r16/32/64 */
             break;
 
+        case 0x63:           /* MOVSXD r16/32/64,r/m16/32/32 */
+            x64modrm_fetch(emu, ins);
+            break;
+
         case 0x83:           /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m,imm8 */
             x64modrm_fetch(emu, ins);
             ins->imm.byte[0] = fetch_8();
