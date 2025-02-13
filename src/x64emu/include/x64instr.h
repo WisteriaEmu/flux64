@@ -67,7 +67,7 @@ typedef struct {
 
     /* Address-size override prefix 0x67 presence.
        Changes behaviour of memory addressing for some opcodes
-       (16 bit addresses). */
+       (64/32 bit). */
     bool       address_sz;
 
     uint8_t    opcode[3];

@@ -116,6 +116,11 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
                 return false;
             break;
 
+        case 0xE8:           /* CALL rel32 */
+            push_64(emu, r_rip);
+            r_rip += (int64_t)ins->displ.sdword[0];
+            break;
+
         default:
             log_err("Unimplemented opcode %02X", op);
             return false;

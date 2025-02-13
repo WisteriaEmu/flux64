@@ -85,6 +85,10 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
                 ins->imm.dword[0] = fetch_32();
             break;
 
+        case 0xE8:           /* CALL rel32 */
+            ins->displ.dword[0] = fetch_32();
+            break;
+
         default:
             log_err("Unhandled opcode %02X", ins->opcode[0]);
             return false;
