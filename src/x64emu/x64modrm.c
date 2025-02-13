@@ -17,7 +17,7 @@ void *x64modrm_get_reg(x64emu_t *emu, x64instr_t *ins) {
         case 0x3:
             return emu->regs + (ins->modrm.reg | (ins->rex.b << 3));
         default:
-            log_err("Unimplemented mod");
+            log_err("Unimplemented mod %02X", ins->modrm.byte);
             break;
     }
     return NULL;
@@ -28,7 +28,7 @@ void *x64modrm_get_rm(x64emu_t *emu, x64instr_t *ins) {
         case 0x3:
             return emu->regs + (ins->modrm.rm | (ins->rex.b << 3));
         default:
-            log_err("Unimplemented mod");
+            log_err("Unimplemented mod %02X", ins->modrm.byte);
             break;
     }
     return NULL;

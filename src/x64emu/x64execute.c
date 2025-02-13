@@ -12,25 +12,34 @@
 SET_DEBUG_CHANNEL("X64EXECUTE")
 
 static inline bool x64execute_83(x64emu_t *emu, x64instr_t *ins) {
+    /* FIXME: Handle flags. */
+    /* imm8 is sign-extended. */
+#define OPERATION(operator, t) \
+    *(t *)dest = *(t *)dest operator (t)ins->imm.sbyte[0];
+#define EXTENSION(operator) \
+    if (ins->rex.w)           OPERATION(operator, int64_t) \
+    else if (ins->operand_sz) OPERATION(operator, int16_t) \
+    else                      OPERATION(operator, int32_t) \
+    break;
+
+    void *dest = x64modrm_get_rm(emu, ins);
+    if (!dest) return false;
     switch (ins->modrm.reg) {
-        case 0x4: {          /* AND r/m,imm8 */
-            /* FIXME: Handle flags. */
-            void *dest = x64modrm_get_rm(emu, ins);
-            if (!dest) return false;
-            /* imm8 is sign-extended. */
-            if (ins->rex.w)
-                *(int64_t *)dest &= (int64_t)ins->imm.sbyte[0];
-            else if (ins->operand_sz)
-                *(int16_t *)dest &= (int16_t)ins->imm.sbyte[0];
-            else
-                *(int32_t *)dest &= (int32_t)ins->imm.sbyte[0];
-            break;
-        }
+        case 0x0: EXTENSION(+) /* ADD r/m16/32/64,imm8 */
+        case 0x1: EXTENSION(|) /* OR  r/m16/32/64,imm8 */
+        /* ADC */
+        /* SBB */
+        case 0x4: EXTENSION(&) /* AND r/m16/32/64,imm8 */
+        case 0x5: EXTENSION(-) /* SUB r/m16/32/64,imm8 */
+        case 0x6: EXTENSION(^) /* XOR r/m16/32/64,imm8 */
+        /* CMP */
         default:
             log_err("Unimplemented opcode 83 extension %X", ins->modrm.reg);
             return false;
     }
     return true;
+#undef EXTENSION
+#undef OPERATION
 }
 
 static inline bool x64execute_C7(x64emu_t *emu, x64instr_t *ins) {
@@ -87,7 +96,7 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             r_reg64((op & 7) | (ins->rex.b << 3)) = pop_64(emu);
             break;
 
-        case 0x63:           /* MOVSXD r16/32/64,r/m16/32/32 */
+        case 0x63: {         /* MOVSXD r16/32/64,r/m16/32/32 */
             void *src  = x64modrm_get_rm(emu, ins);
             void *dest = x64modrm_get_reg(emu, ins);
             if (!src || !dest) return false;
@@ -98,8 +107,9 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             else
                 *(int32_t *)dest = *(int32_t *)src;
             break;
+        }
 
-        case 0x83:           /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m,imm8 */
+        case 0x83:           /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m16/32/64,imm8 */
             if (!x64execute_83(emu, ins))
                 return false;
             break;

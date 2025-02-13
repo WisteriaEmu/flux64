@@ -62,7 +62,7 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             x64modrm_fetch(emu, ins);
             break;
 
-        case 0x83:           /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m,imm8 */
+        case 0x83:           /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m16/32/64,imm8 */
             x64modrm_fetch(emu, ins);
             ins->imm.byte[0] = fetch_8();
             break;
@@ -72,7 +72,6 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0xB8 ... 0xBF:  /* MOV+r16/32/64 imm16/32/64 */
-            /* NOTE: REX.W overrides 66H prefix, so checked first. */
             if (ins->rex.w)
                 ins->imm.qword[0] = fetch_64();
             else if (ins->operand_sz)
