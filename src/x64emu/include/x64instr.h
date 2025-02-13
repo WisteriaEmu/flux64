@@ -57,20 +57,31 @@ typedef union {
  */
 typedef struct {
     uint8_t    rep;            /* REP/LOCK prefix. */
+
     x64rex_t   rex;
-    bool       operand_sz;     /* operand-size override prefix 0x66. */
-    bool       address_sz;     /* address-size override prefix 0x67. */
+
+    /* Operand-size override prefix 0x66 presence.
+       When set to `true` makes some opcodes use
+       16 bit data. */
+    bool       operand_sz;
+
+    /* Address-size override prefix 0x67 presence.
+       Changes behaviour of memory addressing for some opcodes
+       (16 bit addresses). */
+    bool       address_sz;
+
     uint8_t    opcode[3];
+
     x64modrm_t modrm;          /* ModR/M byte. */
     x64sib_t   sib;            /* SIB byte. */
-    reg64_t    displ;          /* address displacement. */
-    reg64_t    imm;            /* immediate data. */
+    reg64_t    displ;          /* Address displacement. */
+    reg64_t    imm;            /* Immediate data. */
 } x64instr_t;
 
 /* fetch N bits of instruction. */
-#define fetch_8()  *(uint8_t*)(r_rip++)
-#define fetch_16() *(uint16_t*)(r_rip += 2, r_rip - 2)
-#define fetch_32() *(uint32_t*)(r_rip += 4, r_rip - 4)
-#define fetch_64() *(uint64_t*)(r_rip += 8, r_rip - 8)
+#define fetch_8()  *(uint8_t  *)(r_rip++)
+#define fetch_16() *(uint16_t *)(r_rip += 2, r_rip - 2)
+#define fetch_32() *(uint32_t *)(r_rip += 4, r_rip - 4)
+#define fetch_64() *(uint64_t *)(r_rip += 8, r_rip - 8)
 
 #endif /* __X64INSTR_H_ */

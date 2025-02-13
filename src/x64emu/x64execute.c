@@ -14,12 +14,14 @@ SET_DEBUG_CHANNEL("X64EXECUTE")
 static inline bool x64execute_83(x64emu_t *emu, x64instr_t *ins) {
     switch (ins->modrm.reg) {
         case 0x4: {          /* AND r/m,imm8 */
-            /* FIXME: Implement 16 bit version. Handle flags. */
+            /* FIXME: Handle flags. */
             void *dest = x64modrm_dest_rm(emu, ins);
             if (!dest) return false;
             /* imm8 is sign-extended. */
             if (ins->rex.w)
                 *(int64_t *)dest &= (int64_t)ins->imm.sbyte[0];
+            else if (ins->operand_sz)
+                *(int16_t *)dest &= (int16_t)ins->imm.sbyte[0];
             else
                 *(int32_t *)dest &= (int32_t)ins->imm.sbyte[0];
             break;
@@ -34,12 +36,13 @@ static inline bool x64execute_83(x64emu_t *emu, x64instr_t *ins) {
 static inline bool x64execute_C7(x64emu_t *emu, x64instr_t *ins) {
     switch (ins->modrm.reg) {
         case 0x0: {          /* MOV r/m16/32/64,imm16/32/32 */
-            /* FIXME: Implement 16 bit version. */
             void *dest = x64modrm_dest_rm(emu, ins);
             if (!dest) return false;
             /* imm32 is sign-extended */
             if (ins->rex.w)
                 *(int64_t *)dest = (int64_t)ins->imm.sdword[0];
+            else if (ins->operand_sz)
+                *(int16_t *)dest = ins->imm.sword[0];
             else
                 *(int32_t *)dest = ins->imm.sdword[0];
             break;
@@ -61,12 +64,14 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0x31: {         /* XOR r/m16/32/64,r16/32/64 */
-            /* FIXME: Implement 16 bit version. Handle flags. */
+            /* FIXME: Handle flags. */
             void *src  = x64modrm_src_reg(emu, ins);
             void *dest = x64modrm_dest_rm(emu, ins);
             if (!src || !dest) return false;
             if (ins->rex.w)
                 *(uint64_t *)dest ^= *(uint64_t *)src;
+            else if (ins->operand_sz)
+                *(uint16_t *)dest ^= *(uint16_t *)src;
             else
                 *(uint32_t *)dest ^= *(uint32_t *)src;
             break;
@@ -88,12 +93,13 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0x89: {         /* MOV r/m16/32/64,r16/32/64 */
-            /* FIXME: Implement 16 bit version. */
             void *src  = x64modrm_src_reg(emu, ins);
             void *dest = x64modrm_dest_rm(emu, ins);
             if (!src || !dest) return false;
             if (ins->rex.w)
                 *(uint64_t *)dest = *(uint64_t *)src;
+            else if (ins->operand_sz)
+                *(uint16_t *)dest = *(uint16_t *)src;
             else
                 *(uint32_t *)dest = *(uint32_t *)src;
             break;

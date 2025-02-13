@@ -68,17 +68,21 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0xB8 ... 0xBF:  /* MOV+r16/32/64 imm16/32/64 */
-            /* FIXME: Implement 16 bit version. */
+            /* NOTE: REX.W overrides 66H prefix, so checked first. */
             if (ins->rex.w)
                 ins->imm.qword[0] = fetch_64();
+            else if (ins->operand_sz)
+                ins->imm.word[0]  = fetch_16();
             else
                 ins->imm.dword[0] = fetch_32();
             break;
 
         case 0xC7:           /* MOV r/m16/32/64,imm16/32/32 */
-            /* FIXME: Implement 16 bit version. */
             x64modrm_fetch(emu, ins);
-            ins->imm.dword[0] = fetch_32();
+            if (ins->operand_sz)
+                ins->imm.word[0]  = fetch_16();
+            else
+                ins->imm.dword[0] = fetch_32();
             break;
 
         default:

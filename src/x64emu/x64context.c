@@ -13,15 +13,21 @@ SET_DEBUG_CHANNEL("X64CONTEXT")
 static bool segments_free(x64context_t *ctx) {
     if (!ctx || !ctx->segments_len) return true;
 
+    bool ret = true;
+
     for (int i = 0; i < ctx->segments_len; i++) {
         log_dump("Unmapping 0x%lx, size 0x%lx", (uintptr_t)ctx->segments[i].base, ctx->segments[i].size);
         if (munmap(ctx->segments[i].base, ctx->segments[i].size) != 0) {
             log_err("Failed to unmap segment: %s", strerror(errno));
-            return false;
+            ret = false;
         }
     }
+
+    if (!ret) return false;
+
     free(ctx->segments);
     ctx->segments_len = 0;
+
     return true;
 }
 
