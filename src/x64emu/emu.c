@@ -6,24 +6,10 @@
 #include "x64decode.h"
 #include "x64execute.h"
 #include "x64regs_private.h"
+#include "x64stack.h"
 #include "debug.h"
 
 SET_DEBUG_CHANNEL("X64EMU")
-
-#if 0
-// to set and get registers
-#define ADD(r) \
-    void     set_##r(x64emu_t *emu, uint64_t v) { emu->regs[_##r].qword[0] = v; } \
-    uint64_t get_##r(x64emu_t *emu) { return emu->regs[_##r].qword[0]; }
-ADD(rax) ADD(rcx) ADD(rdx) ADD(rbx)
-ADD(rsi) ADD(rdi) ADD(rsp) ADD(rbp)
-ADD(r8 ) ADD(r9 ) ADD(r10) ADD(r11)
-ADD(r12) ADD(r13) ADD(r14) ADD(r15)
-ADD(rip)
-#undef ADD
-#endif
-
-//#define ADD(r) void set_e##r(x64emu_t *emu, uint64_t v) { emu->regs[_r##r].dword[0] = v; }
 
 bool x64emu_init(x64emu_t *emu, x64context_t *ctx) {
     if (!emu || !ctx) return false;

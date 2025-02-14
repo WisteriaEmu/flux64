@@ -7,7 +7,7 @@
 #include "x64execute.h"
 #include "x64emu.h"
 #include "x64regs_private.h"
-#include "x64stack_private.h"
+#include "x64stack.h"
 
 SET_DEBUG_CHANNEL("X64EXECUTE")
 
@@ -25,7 +25,7 @@ SET_DEBUG_CHANNEL("X64EXECUTE")
 
 static inline bool x64execute_83(x64emu_t *emu, x64instr_t *ins) {
     void *src  = ins->imm.sqword;
-    void *dest = modrm_get_rm(emu, ins);
+    void *dest = x64modrm_get_rm(emu, ins);
     switch (ins->modrm.reg) {
         case 0x0:            /* ADD r/m16/32/64,imm8 */
             SX_OPERATION(+, int8_t, int8_t, int8_t)
@@ -54,7 +54,7 @@ static inline bool x64execute_83(x64emu_t *emu, x64instr_t *ins) {
 
 static inline bool x64execute_C7(x64emu_t *emu, x64instr_t *ins) {
     void *src  = ins->imm.sqword;
-    void *dest = modrm_get_rm(emu, ins);
+    void *dest = x64modrm_get_rm(emu, ins);
     switch (ins->modrm.reg) {
         case 0x0:            /* MOV r/m16/32/64,imm16/32/32 */
             SX_OPERATION(, int32_t, int16_t, int32_t)
@@ -76,8 +76,8 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0x31: {         /* XOR r/m16/32/64,r16/32/64 */
-            void *src  = modrm_get_reg(emu, ins);
-            void *dest = modrm_get_rm(emu, ins);
+            void *src  = x64modrm_get_reg(emu, ins);
+            void *dest = x64modrm_get_rm(emu, ins);
             SX_OPERATION(^, int64_t, int16_t, int32_t)
             break;
         }
@@ -93,8 +93,8 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0x63: {         /* MOVSXD r16/32/64,r/m16/32/32 */
-            void *src  = modrm_get_rm(emu, ins);
-            void *dest = modrm_get_reg(emu, ins);
+            void *src  = x64modrm_get_rm(emu, ins);
+            void *dest = x64modrm_get_reg(emu, ins);
             SX_OPERATION(, int32_t, int16_t, int32_t)
             break;
         }
@@ -105,8 +105,8 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0x89: {         /* MOV r/m16/32/64,r16/32/64 */
-            void *src  = modrm_get_reg(emu, ins);
-            void *dest = modrm_get_rm(emu, ins);
+            void *src  = x64modrm_get_reg(emu, ins);
+            void *dest = x64modrm_get_rm(emu, ins);
             SX_OPERATION(, int64_t, int16_t, int32_t)
             break;
         }

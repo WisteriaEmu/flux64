@@ -116,7 +116,7 @@ static bool load_program_headers(x64context_t *ctx, FILE *fd, Elf64_Ehdr *ehdr) 
 
     log_dump("Mapping %d segments", ctx->segments_len);
 
-    ctx->segments = calloc(ctx->segments_len, sizeof(x64segment_t));
+    ctx->segments = calloc(ctx->segments_len, sizeof(segment_t));
 
     uint32_t seg_idx = 0;
 

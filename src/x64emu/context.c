@@ -6,6 +6,7 @@
 #include <stdbool.h>
 
 #include "x64context.h"
+#include "x64stack.h"
 #include "debug.h"
 
 SET_DEBUG_CHANNEL("X64CONTEXT")
