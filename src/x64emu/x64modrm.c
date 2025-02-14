@@ -18,7 +18,7 @@ void x64modrm_fetch(x64emu_t *emu, x64instr_t *ins) {
 
     switch (ins->modrm.mod) {
         case 0x0: /* 00 */
-            if (ins->modrm.rm == 5)
+            if (ins->modrm.rm == 5 || (ins->modrm.rm == 4 && ins->sib.base == 5))
                 ins->displ.dword[0] = fetch_32();
             break;
         case 0x1: /* 01 */
