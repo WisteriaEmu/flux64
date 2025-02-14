@@ -1,4 +1,6 @@
 
+#include <stdint.h>
+
 #include "debug.h"
 #include "x64emu.h"
 #include "x64instr.h"
@@ -8,24 +10,24 @@
 SET_DEBUG_CHANNEL("X64MODRM")
 
 void x64modrm_fetch(x64emu_t *emu, x64instr_t *ins) {
-    ins->modrm.byte = fetch_8();
+    ins->modrm.byte = fetch_8(emu, ins);
 
     /* 11 - Register-direct addressing mode. */
     if (ins->modrm.mod == 3) return;
 
     if (ins->modrm.rm == 4)
-        ins->sib.byte = fetch_8();
+        ins->sib.byte = fetch_8(emu, ins);
 
     switch (ins->modrm.mod) {
         case 0x0: /* 00 */
             if (ins->modrm.rm == 5 || (ins->modrm.rm == 4 && ins->sib.base == 5))
-                ins->displ.dword[0] = fetch_32();
+                ins->displ.dword[0] = fetch_32(emu, ins);
             break;
         case 0x1: /* 01 */
-            ins->displ.byte[0] = fetch_8();
+            ins->displ.byte[0] = fetch_8(emu, ins);
             break;
         case 0x2: /* 10 */
-            ins->displ.dword[0] = fetch_32();
+            ins->displ.dword[0] = fetch_32(emu, ins);
             break;
     }
 }

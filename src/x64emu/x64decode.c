@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "debug.h"
 #include "x64instr.h"
@@ -10,12 +11,37 @@
 
 SET_DEBUG_CHANNEL("X64DECODE")
 
+uint8_t fetch_8(x64emu_t *emu, x64instr_t *ins) {
+    uint8_t v = *(uint8_t  *)(r_rip++);
+    OPCODE_APPEND("%02x ", v)
+    return v;
+}
+
+uint16_t fetch_16(x64emu_t *emu, x64instr_t *ins) {
+    uint16_t v = *(uint16_t *)(r_rip += 2, r_rip - 2);
+    OPCODE_APPEND("%04x ", v)
+    return v;
+}
+
+uint32_t fetch_32(x64emu_t *emu, x64instr_t *ins) {
+    uint32_t v = *(uint32_t *)(r_rip += 4, r_rip - 4);
+    OPCODE_APPEND("%08x ", v)
+    return v;
+}
+
+uint64_t fetch_64(x64emu_t *emu, x64instr_t *ins) {
+    uint64_t v = *(uint64_t *)(r_rip += 8, r_rip - 8);
+    OPCODE_APPEND("%016lx ", v)
+    return v;
+}
+
 /**
  * @return Next byte of instruction that does not seem like a prefix byte.
  */
 static inline uint8_t decode_prefixes(x64emu_t *emu, x64instr_t *ins) {
+
     while (1) {
-        uint8_t byte = fetch_8();
+        uint8_t byte = fetch_8(emu, ins);
         switch (byte) {
             case 0x40 ... 0x4F:  /* REX prefix. */
                 ins->rex.byte = byte;
@@ -31,7 +57,6 @@ static inline uint8_t decode_prefixes(x64emu_t *emu, x64instr_t *ins) {
                     log_err("Unimplemented LOCK prefix");
                     return false;
                 }
-                log_dump("REP %02X", byte);
                 ins->rep = byte;
                 break;
             default:
@@ -65,7 +90,7 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
 
         case 0x83:           /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m16/32/64,imm8 */
             x64modrm_fetch(emu, ins);
-            ins->imm.byte[0] = fetch_8();
+            ins->imm.byte[0] = fetch_8(emu, ins);
             break;
 
         case 0x89:           /* MOV r/m16/32/64,r16/32/64 */
@@ -74,24 +99,24 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
 
         case 0xB8 ... 0xBF:  /* MOV+r16/32/64 imm16/32/64 */
             if (ins->rex.w)
-                ins->imm.qword[0] = fetch_64();
+                ins->imm.qword[0] = fetch_64(emu, ins);
             else if (ins->operand_sz)
-                ins->imm.word[0]  = fetch_16();
+                ins->imm.word[0]  = fetch_16(emu, ins);
             else
-                ins->imm.dword[0] = fetch_32();
+                ins->imm.dword[0] = fetch_32(emu, ins);
             break;
 
         case 0xC7:           /* MOV r/m16/32/64,imm16/32/32 */
             x64modrm_fetch(emu, ins);
             if (ins->operand_sz)
-                ins->imm.word[0]  = fetch_16();
+                ins->imm.word[0]  = fetch_16(emu, ins);
             else
-                ins->imm.dword[0] = fetch_32();
+                ins->imm.dword[0] = fetch_32(emu, ins);
             break;
 
         case 0xE8:           /* CALL rel32 */
             /* rel32 is immediate data */
-            ins->imm.dword[0] = fetch_32();
+            ins->imm.dword[0] = fetch_32(emu, ins);
             break;
 
         default:

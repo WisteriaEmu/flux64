@@ -45,8 +45,13 @@ bool x64emu_init(x64emu_t *emu, x64context_t *ctx) {
 void x64emu_run(x64emu_t *emu) {
     while (1) {
         x64instr_t instr = { 0 };
+        uint64_t saved_rip = r_rip;
+
         if (!x64decode(emu, &instr))
             return;
+
+
+        log_dump("%lx: %s", saved_rip, instr.desc.str);
 
         if (!x64execute(emu, &instr))
             return;

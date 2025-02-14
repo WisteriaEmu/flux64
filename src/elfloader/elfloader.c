@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
-#include <elf.h>
+#include <linux/elf.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <errno.h>
@@ -31,9 +31,9 @@ static char *check_elf_header(Elf64_Ehdr *ehdr) {
     if (ehdr->e_ident[EI_DATA] != ELFDATA2LSB)
         return "Unsupported data encoding byte index, can only support little endian for now.";
 
-    if (ehdr->e_ident[EI_OSABI] != ELFOSABI_GNU &&
-        ehdr->e_ident[EI_OSABI] != ELFOSABI_NONE)
-        return "Unsupported OS ABI";
+    // if (ehdr->e_ident[EI_OSABI] != ELFOSABI_GNU &&
+    //     ehdr->e_ident[EI_OSABI] != ELFOSABI_NONE)
+    //     return "Unsupported OS ABI";
 
     if (ehdr->e_ident[EI_VERSION] != EV_CURRENT)
         return "Not a valid ELF ident version";

@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "x64emu.h"
 #include "x64regs.h"
 
 /**
@@ -53,35 +54,45 @@ typedef union {
    immediate or displacement data. */
 
 /**
+ * Instruction debugging description.
+ */
+typedef struct {
+    char            str[48];        /* Instruction bytes as a string. */
+} x64instr_desc_t;
+
+/**
  * Decoded x86_64 instruction.
  */
 typedef struct {
-    uint8_t    rep;            /* REP/LOCK prefix. */
+    uint8_t         rep;            /* REP/LOCK prefix. */
 
-    x64rex_t   rex;
+    x64rex_t        rex;
 
     /* Operand-size override prefix 0x66 presence.
        When set to `true` makes some opcodes use
        16 bit data. */
-    bool       operand_sz;
+    bool            operand_sz;
 
     /* Address-size override prefix 0x67 presence.
        Changes behaviour of memory addressing for some opcodes
        (64/32 bit). */
-    bool       address_sz;
+    bool            address_sz;
 
-    uint8_t    opcode[3];
+    uint8_t         opcode[3];
 
-    x64modrm_t modrm;          /* ModR/M byte. */
-    x64sib_t   sib;            /* SIB byte. */
-    reg64_t    displ;          /* Address displacement. */
-    reg64_t    imm;            /* Immediate data. */
+    x64modrm_t      modrm;          /* ModR/M byte. */
+    x64sib_t        sib;            /* SIB byte. */
+    reg64_t         displ;          /* Address displacement. */
+    reg64_t         imm;            /* Immediate data. */
+    x64instr_desc_t desc;
 } x64instr_t;
 
 /* fetch N bits of instruction. */
-#define fetch_8()  *(uint8_t  *)(r_rip++)
-#define fetch_16() *(uint16_t *)(r_rip += 2, r_rip - 2)
-#define fetch_32() *(uint32_t *)(r_rip += 4, r_rip - 4)
-#define fetch_64() *(uint64_t *)(r_rip += 8, r_rip - 8)
+uint8_t  fetch_8(x64emu_t *emu, x64instr_t *ins);
+uint16_t fetch_16(x64emu_t *emu, x64instr_t *ins);
+uint32_t fetch_32(x64emu_t *emu, x64instr_t *ins);
+uint64_t fetch_64(x64emu_t *emu, x64instr_t *ins);
+
+#define OPCODE_APPEND(fmt, ...) sprintf(ins->desc.str + strlen(ins->desc.str), fmt, ## __VA_ARGS__);
 
 #endif /* __X64INSTR_H_ */

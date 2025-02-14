@@ -11,7 +11,7 @@
 SET_DEBUG_CHANNEL("X64DECODE_0F")
 
 bool x64decode_0f(x64emu_t *emu, x64instr_t *ins) {
-    ins->opcode[1] = fetch_8();
+    ins->opcode[1] = fetch_8(emu, ins);
 
     switch (ins->opcode[1]) {
         case 0x05:           /* SYSCALL */
