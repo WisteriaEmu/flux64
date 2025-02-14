@@ -114,8 +114,6 @@ static bool load_program_headers(x64context_t *ctx, FILE *fd, Elf64_Ehdr *ehdr) 
         if (need_to_load(phdrs + i))
             ctx->segments_len++;
 
-    log_dump("Mapping %d segments", ctx->segments_len);
-
     ctx->segments = calloc(ctx->segments_len, sizeof(segment_t));
 
     uint32_t seg_idx = 0;
@@ -123,14 +121,15 @@ static bool load_program_headers(x64context_t *ctx, FILE *fd, Elf64_Ehdr *ehdr) 
     for (Elf64_Half i = 0; i < ehdr->e_phnum; i++) {
         Elf64_Phdr *ph = phdrs + i;
         log_dump("Program header: type: 0x%x, flags: 0x%x, offset: 0x%llx, vaddr: 0x%llx, "
-                 "paddr: 0x%llx\nfilesz: 0x%llx, memsz: 0x%llx, align: 0x%llx",
+                 "paddr: 0x%llx, filesz: 0x%llx, memsz: 0x%llx, align: 0x%llx",
                  ph->p_type, ph->p_flags, ph->p_offset, ph->p_vaddr, ph->p_paddr,
                  ph->p_filesz, ph->p_memsz, ph->p_align);
 
         if (need_to_load(ph)) {
             /* FIXME: workaround would be simple, but not implemented yet... */
             if (ph->p_align & (ctx->page_size - 1)) {
-                log_err("Mapping segment with 0x%llx alignment on 0x%lx page size is currently unsupported", ph->p_align, ctx->page_size);
+                log_err("Mapping segment with 0x%llx alignment on 0x%lx page size is currently unsupported",
+                        ph->p_align, ctx->page_size);
                 return false;
             }
 
@@ -144,11 +143,11 @@ static bool load_program_headers(x64context_t *ctx, FILE *fd, Elf64_Ehdr *ehdr) 
 
             int prot = p_flags_to_prot(ph->p_flags);
 
-            log_dump("Mapping segment at 0x%llx, size 0x%llx, offset 0x%llx, prot 0x%x",
-                        aligned_addr, aligned_size, aligned_offs, prot);
+            log_dump("Mapping segment to 0x%llx-0x%llx, offset 0x%llx",
+                        aligned_addr, aligned_addr + aligned_size, aligned_offs);
 
             void *ret = mmap((void *)aligned_addr, aligned_size,
-                prot, MAP_PRIVATE | MAP_FIXED, fileno(fd), aligned_offs);
+                PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_FIXED, fileno(fd), aligned_offs);
 
             if (ret == MAP_FAILED) {
                 log_err("Failed to map segment: %s", strerror(errno));
@@ -156,7 +155,20 @@ static bool load_program_headers(x64context_t *ctx, FILE *fd, Elf64_Ehdr *ehdr) 
             }
 
             Elf64_Xword added = ph->p_memsz - ph->p_filesz;
-            if (added) memset((void *)(ph->p_vaddr + ph->p_filesz), 0, added);
+            if (added) {
+                Elf64_Addr extend_addr = ph->p_vaddr + ph->p_filesz;
+                log_dump("Writing 0 to 0x%llx-0x%llx", extend_addr,
+                         extend_addr + added);
+                memset((void *)extend_addr, 0, added);
+            }
+
+            log_dump("Protecting segment with prot 0x%x", prot);
+
+            /* Now we can protect the segment. */
+            if (mprotect(ret, aligned_size, prot) != 0) {
+                log_err("Failed to protect segment: %s", strerror(errno));
+                return false;
+            }
 
             ctx->segments[seg_idx].base = ret; /* used for unmapping segments */
             ctx->segments[seg_idx].size = aligned_size;

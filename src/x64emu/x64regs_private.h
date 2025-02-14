@@ -58,6 +58,8 @@ enum {
 
 #define r_eip  emu->rip.dword[0]
 
+#define r_flags emu->flags.raw
+
 /* bytes 0-1 */
 #define r_ax   emu->regs[_rax].word[0]
 #define r_cx   emu->regs[_rcx].word[0]

@@ -8,6 +8,7 @@
 #include "x64regs_private.h"
 #include "x64stack.h"
 #include "debug.h"
+#include "x64flags.h"
 
 SET_DEBUG_CHANNEL("X64EMU")
 

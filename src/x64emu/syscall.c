@@ -15,6 +15,10 @@ bool x64syscall(x64emu_t *emu) {
 
     log_dump("Syscall %lX", r_rax);
 
+    r_rcx = r_rip;
+    r_r11 = r_flags;
+    r_flags = 0; /* FIXME: Maybe implement IA32_FMASK? */
+
     switch (r_rax) {
         case 0x01:            /* SYS_write */
             s_rax = write(s_edi, (void *)r_rsi, (size_t)r_rdx);

@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 
+#include "x64flags.h"
 #include "x64regs.h"
 #include "x64context.h"
 
@@ -13,6 +14,7 @@ typedef struct {
     x64context_t *ctx;
     reg64_t       regs[16]; /* 16 general-purpose registers. */
     reg64_t       rip;      /* Instruction pointer. */
+    x64flags_t    flags;    /* RFLAGS register. */
 } x64emu_t;
 
 /**

@@ -123,7 +123,10 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0xE8:           /* CALL rel32 */
-            push_64(emu, r_rip);
+            if (ins->address_sz)
+                push_32(emu, r_eip);
+            else
+                push_64(emu, r_rip);
             r_rip += (int64_t)ins->imm.sdword[0];
             break;
 
