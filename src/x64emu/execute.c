@@ -23,6 +23,20 @@ SET_DEBUG_CHANNEL("X64EXECUTE")
     else if (ins->operand_sz) BASE_OPERATION(operator, int16_t, src16) \
     else                      BASE_OPERATION(operator, int32_t, src32)
 
+#define CLEAR_CF_OF() emu->flags.CF = emu->flags.OF = 0;
+
+#define UPDATE_SF_ZF_IMPL(dest_type) { \
+    emu->flags.SF = *(dest_type *)dest < 0; \
+    emu->flags.ZF = *(dest_type *)dest == 0; \
+}
+
+#define UPDATE_SF_ZF() \
+    if      (ins->rex.w)      UPDATE_SF_ZF_IMPL(int64_t) \
+    else if (ins->operand_sz) UPDATE_SF_ZF_IMPL(int16_t) \
+    else                      UPDATE_SF_ZF_IMPL(int32_t)
+
+#define UPDATE_PF() emu->flags.PF = __builtin_parity(*(uint8_t *)dest);
+
 static inline bool x64execute_83(x64emu_t *emu, x64instr_t *ins) {
     void *src  = ins->imm.sqword;
     void *dest = x64modrm_get_rm(emu, ins);
@@ -43,6 +57,7 @@ static inline bool x64execute_83(x64emu_t *emu, x64instr_t *ins) {
             break;
         case 0x6:            /* XOR r/m16/32/64,imm8 */
             SX_OPERATION(^, int8_t, int8_t, int8_t)
+            CLEAR_CF_OF() UPDATE_SF_ZF() UPDATE_PF()
             break;
         /* CMP */
         default:
@@ -79,6 +94,7 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             void *src  = x64modrm_get_reg(emu, ins);
             void *dest = x64modrm_get_rm(emu, ins);
             SX_OPERATION(^, int64_t, int16_t, int32_t)
+            CLEAR_CF_OF() UPDATE_SF_ZF() UPDATE_PF()
             break;
         }
 
@@ -137,6 +153,3 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
 
     return true;
 }
-
-#undef BASE_OPERATION
-#undef SX_OPERATION

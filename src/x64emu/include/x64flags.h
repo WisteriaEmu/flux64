@@ -8,7 +8,7 @@ typedef union {
     struct {
         uint64_t CF   : 1;  /*     0  Carry Flag */
         uint64_t      : 1;  /*     1  Reserved */
-        uint64_t PF   : 1;  /*     2  Parify Flag */
+        uint64_t PF   : 1;  /*     2  Parity Flag */
         uint64_t      : 1;  /*     3  Reserved */
         uint64_t AF   : 1;  /*     4  Auxiliary Carry Flag */
         uint64_t      : 1;  /*     5  Reserved */
