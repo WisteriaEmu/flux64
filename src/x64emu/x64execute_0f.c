@@ -6,7 +6,6 @@
 #include "x64instr.h"
 #include "x64execute.h"
 #include "x64regs_private.h"
-#include "x64syscall.h"
 
 SET_DEBUG_CHANNEL("X64EXECUTE_0F")
 

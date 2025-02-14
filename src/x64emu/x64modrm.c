@@ -9,7 +9,7 @@
 
 SET_DEBUG_CHANNEL("X64MODRM")
 
-void x64modrm_fetch(x64emu_t *emu, x64instr_t *ins) {
+void modrm_fetch(x64emu_t *emu, x64instr_t *ins) {
     ins->modrm.byte = fetch_8(emu, ins);
 
     /* 11 - Register-direct addressing mode. */
@@ -58,7 +58,7 @@ static inline uint64_t x64sib_calculate01(x64emu_t *emu, x64instr_t *ins) {
     return (x64sib_get_index(emu, ins) << ins->sib.scale) + x64sib_get_base(emu, ins);
 }
 
-void *x64modrm_get_reg(x64emu_t *emu, x64instr_t *ins) {
+void *modrm_get_reg(x64emu_t *emu, x64instr_t *ins) {
     return emu->regs + (ins->modrm.reg | (ins->rex.r << 3));
 }
 
@@ -66,7 +66,7 @@ static inline uint64_t get_raw_rm(x64emu_t *emu, x64instr_t *ins) {
     return r_reg64(ins->modrm.rm | (ins->rex.b << 3));
 }
 
-void *x64modrm_get_rm(x64emu_t *emu, x64instr_t *ins) {
+void *modrm_get_rm(x64emu_t *emu, x64instr_t *ins) {
     if (ins->address_sz) {
         log_err("32 bit addressing ModR/M still not covered.");
         return NULL;

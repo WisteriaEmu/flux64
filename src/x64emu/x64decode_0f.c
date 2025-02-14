@@ -18,7 +18,7 @@ bool x64decode_0f(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0x18 ... 0x1F:  /* HINT_NOP */
-            x64modrm_fetch(emu, ins);
+            modrm_fetch(emu, ins);
             break;
 
         default:

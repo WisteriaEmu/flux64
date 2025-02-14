@@ -5,7 +5,6 @@
 
 #include "debug.h"
 #include "x64emu.h"
-#include "x64syscall.h"
 #include "x64regs_private.h"
 
 SET_DEBUG_CHANNEL("X64SYSCALL")

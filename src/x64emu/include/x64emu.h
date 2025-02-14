@@ -32,6 +32,8 @@ void x64stack_setup(x64emu_t *emu);
 void x64emu_run(x64emu_t *emu);
 
 
+bool x64syscall(x64emu_t *emu);
+
 #if 0
 // set/get registers and instruction pointer
 
