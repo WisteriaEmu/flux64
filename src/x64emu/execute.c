@@ -141,14 +141,14 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
         case 0x89: {         /* MOV r/m16/32/64,r16/32/64 */
             void *src  = x64modrm_get_reg(emu, ins);
             void *dest = x64modrm_get_rm(emu, ins);
-            DEST_OPERATION(OP_SIGNED_MOV, *(int64_t *)src, *(int16_t *)src, *(int32_t *)src)
+            DEST_OPERATION(OP_UNSIGNED_MOV, *(uint64_t *)src, *(uint16_t *)src, *(uint32_t *)src)
             break;
         }
 
         case 0x8B: {         /* MOV r16/32/64,r/m16/32/64 */
             void *src  = x64modrm_get_rm(emu, ins);
             void *dest = x64modrm_get_reg(emu, ins);
-            DEST_OPERATION(OP_SIGNED_MOV, *(int64_t *)src, *(int16_t *)src, *(int32_t *)src)
+            DEST_OPERATION(OP_UNSIGNED_MOV, *(uint64_t *)src, *(uint16_t *)src, *(uint32_t *)src)
             break;
         }
 
@@ -158,7 +158,7 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             void *dest = x64modrm_get_reg(emu, ins);
             /* Treating src as operand w/o dereferencing,
                signed/unsigned does not change behavior. */
-            DEST_OPERATION(OP_SIGNED_MOV, (int64_t)src, (int16_t)src, (int32_t)src)
+            DEST_OPERATION(OP_UNSIGNED_MOV, (uint64_t)src, (uint16_t)src, (uint32_t)src)
             break;
         }
 
@@ -170,7 +170,7 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
 
         case 0xB8 ... 0xBF: {/* MOV+r16/32/64 imm16/32/64 */
             void *dest = emu->regs + ((op & 7) | (ins->rex.b << 3));
-            DEST_OPERATION(OP_SIGNED_MOV, ins->imm.sqword[0], ins->imm.sword[0], ins->imm.sbyte[0])
+            DEST_OPERATION(OP_UNSIGNED_MOV, ins->imm.qword[0], ins->imm.word[0], ins->imm.byte[0])
             break;
         }
 
