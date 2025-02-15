@@ -72,28 +72,6 @@ static inline bool x64execute_C7(x64emu_t *emu, x64instr_t *ins) {
     return true;
 }
 
-static inline bool x64execute_7x_cond(x64emu_t *emu, x64instr_t *ins, uint8_t op) {
-    switch (op) {
-        case 0x70: return  f_OF;                 break;
-        case 0x71: return !f_OF;                 break;
-        case 0x72: return  f_CF;                 break;
-        case 0x73: return !f_CF;                 break;
-        case 0x74: return  f_ZF;                 break;
-        case 0x75: return !f_ZF;                 break;
-        case 0x76: return  f_CF ||  f_ZF;        break;
-        case 0x77: return !f_CF && !f_ZF;        break;
-        case 0x78: return  f_SF;                 break;
-        case 0x79: return !f_SF;                 break;
-        case 0x7A: return  f_PF;                 break;
-        case 0x7B: return !f_PF;                 break;
-        case 0x7C: return  f_SF != f_OF;         break;
-        case 0x7D: return  f_SF == f_OF;         break;
-        case 0x7E: return  f_ZF || f_SF != f_OF; break;
-        case 0x7F: return !f_ZF && f_SF == f_OF; break;
-    }
-    return false;
-}
-
 bool x64execute(x64emu_t *emu, x64instr_t *ins) {
     uint8_t op = ins->opcode[0];
 
@@ -136,12 +114,8 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
         }
 
         case 0x70 ... 0x7F:  /* Jcc rel8 */
-            if (x64execute_7x_cond(emu, ins, op)) {
+            if (x64execute_jmp_cond(emu, ins, op))
                 r_eip += (int32_t)ins->imm.sbyte[0];
-                log_dump("Jump taken.");
-            } else {
-                log_dump("Jump not taken.");
-            }
             break;
 
         case 0x81:           /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m16/32/64,imm16/32/32 */

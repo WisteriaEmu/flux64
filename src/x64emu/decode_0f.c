@@ -21,6 +21,13 @@ bool x64decode_0f(x64emu_t *emu, x64instr_t *ins) {
             x64modrm_fetch(emu, ins);
             break;
 
+        case 0x80 ... 0x8F:  /* Jcc rel16/32 */
+            if (ins->operand_sz)
+                ins->imm.word[0] = fetch_16(emu, ins);
+            else
+                ins->imm.dword[0] = fetch_32(emu, ins);
+            break;
+
         default:
             log_err("Unhandled opcode 0F %02X", ins->opcode[1]);
             return false;

@@ -103,4 +103,29 @@
 #define DEST_OPERATION_SX(operation, src) \
     DEST_OPERATION(operation, (int64_t)src, (int16_t)src, (int32_t)src)
 
+static inline bool x64execute_jmp_cond(x64emu_t *emu, x64instr_t *ins, uint8_t op) {
+    bool ret = false;
+    switch (op & 0xF) {
+        case 0x0: ret =  f_OF;                 break;
+        case 0x1: ret = !f_OF;                 break;
+        case 0x2: ret =  f_CF;                 break;
+        case 0x3: ret = !f_CF;                 break;
+        case 0x4: ret =  f_ZF;                 break;
+        case 0x5: ret = !f_ZF;                 break;
+        case 0x6: ret =  f_CF ||  f_ZF;        break;
+        case 0x7: ret = !f_CF && !f_ZF;        break;
+        case 0x8: ret =  f_SF;                 break;
+        case 0x9: ret = !f_SF;                 break;
+        case 0xA: ret =  f_PF;                 break;
+        case 0xB: ret = !f_PF;                 break;
+        case 0xC: ret =  f_SF != f_OF;         break;
+        case 0xD: ret =  f_SF == f_OF;         break;
+        case 0xE: ret =  f_ZF || f_SF != f_OF; break;
+        case 0xF: ret = !f_ZF && f_SF == f_OF; break;
+    }
+    if (ret) log_dump("Jump taken");
+    else log_dump("Jump not taken");
+    return ret;
+}
+
 #endif /* __EXECUTE_PRIVATE_H_ */

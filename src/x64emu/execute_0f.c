@@ -6,11 +6,14 @@
 #include "x64instr.h"
 #include "x64execute.h"
 #include "x64regs_private.h"
+#include "x64execute_private.h"
 
 SET_DEBUG_CHANNEL("X64EXECUTE_0F")
 
 bool x64execute_0f(x64emu_t *emu, x64instr_t *ins) {
-    switch (ins->opcode[1]) {
+    uint8_t op = ins->opcode[1];
+
+    switch (op) {
         case 0x05:           /* SYSCALL */
             if (!x64syscall(emu))
                 return false;
@@ -19,8 +22,16 @@ bool x64execute_0f(x64emu_t *emu, x64instr_t *ins) {
         case 0x18 ... 0x1F:  /* HINT_NOP */
             break;
 
+        case 0x80 ... 0x8F:  /* Jcc rel16/32 */
+            if (x64execute_jmp_cond(emu, ins, op))
+                if (ins->operand_sz)
+                    r_eip += (int32_t)ins->imm.sword[0];
+                else
+                    r_eip += ins->imm.sdword[0];
+            break;
+
         default:
-            log_err("Unimplemented opcode 0F %02X", ins->opcode[1]);
+            log_err("Unimplemented opcode 0F %02X", op);
             return false;
     }
     return true;
