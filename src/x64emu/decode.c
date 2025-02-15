@@ -97,6 +97,10 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             x64modrm_fetch(emu, ins);
             break;
 
+        case 0x8B:           /* MOV r16/32/64,r/m16/32/64 */
+            x64modrm_fetch(emu, ins);
+            break;
+
         case 0x8D:           /* LEA r16/32/64,m */
             x64modrm_fetch(emu, ins);
             break;
