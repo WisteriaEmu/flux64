@@ -204,6 +204,16 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
                 return false;
             break;
 
+        case 0xC9:            /* LEAVE */
+            if (ins->operand_sz) {
+                r_sp = r_bp;
+                r_bp = pop_16(emu);
+            } else {
+                r_rsp = r_rbp;
+                r_rbp = pop_64(emu);
+            }
+            break;
+
         case 0xE8:            /* CALL rel32 */
             if (ins->address_sz)
                 push_32(emu, r_eip);

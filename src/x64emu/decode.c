@@ -186,6 +186,9 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             fetch_imm_16_32_32(emu, ins);
             break;
 
+        case 0xC9:            /* LEAVE */
+            break;
+
         case 0xE8:            /* CALL rel32 */
             /* rel32 is immediate data */
             ins->imm.dword[0] = fetch_32(emu, ins);
