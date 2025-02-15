@@ -7,57 +7,31 @@
 #include "x64execute.h"
 #include "x64emu.h"
 #include "x64regs_private.h"
+#include "x64flags_private.h"
+#include "x64execute_private.h"
 #include "x64stack.h"
 
 SET_DEBUG_CHANNEL("X64EXECUTE")
 
-#define BASE_OPERATION(operator, dest_type, src_type) \
-    *(dest_type *)dest operator ## = *(src_type *)src;
-
-/* FIXME: Handle flags. */
-
-/* Sign-extended operation on dest and src. */
-#define SX_OPERATION(operator, src64, src16, src32) \
-    if (!src || !dest) return false; \
-    if      (ins->rex.w)      BASE_OPERATION(operator, int64_t, src64) \
-    else if (ins->operand_sz) BASE_OPERATION(operator, int16_t, src16) \
-    else                      BASE_OPERATION(operator, int32_t, src32)
-
-#define CLEAR_CF_OF() emu->flags.CF = emu->flags.OF = 0;
-
-#define UPDATE_SF_ZF_IMPL(dest_type) { \
-    emu->flags.SF = *(dest_type *)dest < 0; \
-    emu->flags.ZF = *(dest_type *)dest == 0; \
-}
-
-#define UPDATE_SF_ZF() \
-    if      (ins->rex.w)      UPDATE_SF_ZF_IMPL(int64_t) \
-    else if (ins->operand_sz) UPDATE_SF_ZF_IMPL(int16_t) \
-    else                      UPDATE_SF_ZF_IMPL(int32_t)
-
-#define UPDATE_PF() emu->flags.PF = __builtin_parity(*(uint8_t *)dest);
-
 static inline bool x64execute_83(x64emu_t *emu, x64instr_t *ins) {
-    void *src  = ins->imm.sqword;
     void *dest = x64modrm_get_rm(emu, ins);
     switch (ins->modrm.reg) {
         case 0x0:            /* ADD r/m16/32/64,imm8 */
-            SX_OPERATION(+, int8_t, int8_t, int8_t)
+            DEST_OPERATION_SX(OP_SIGNED_ADD, ins->imm.sbyte[0])
             break;
         case 0x1:            /* OR  r/m16/32/64,imm8 */
-            SX_OPERATION(|, int8_t, int8_t, int8_t)
+            DEST_OPERATION_SX(OP_BITWISE_OR, ins->imm.sbyte[0])
             break;
         /* ADC */
         /* SBB */
         case 0x4:            /* AND r/m16/32/64,imm8 */
-            SX_OPERATION(&, int8_t, int8_t, int8_t)
+            DEST_OPERATION_SX(OP_BITWISE_AND, ins->imm.sbyte[0])
             break;
         case 0x5:            /* SUB r/m16/32/64,imm8 */
-            SX_OPERATION(-, int8_t, int8_t, int8_t)
+            DEST_OPERATION_SX(OP_SIGNED_SUB, ins->imm.sbyte[0])
             break;
         case 0x6:            /* XOR r/m16/32/64,imm8 */
-            SX_OPERATION(^, int8_t, int8_t, int8_t)
-            CLEAR_CF_OF() UPDATE_SF_ZF() UPDATE_PF()
+            DEST_OPERATION_SX(OP_BITWISE_XOR, ins->imm.sbyte[0])
             break;
         /* CMP */
         default:
@@ -68,11 +42,10 @@ static inline bool x64execute_83(x64emu_t *emu, x64instr_t *ins) {
 }
 
 static inline bool x64execute_C7(x64emu_t *emu, x64instr_t *ins) {
-    void *src  = ins->imm.sqword;
     void *dest = x64modrm_get_rm(emu, ins);
     switch (ins->modrm.reg) {
         case 0x0:            /* MOV r/m16/32/64,imm16/32/32 */
-            SX_OPERATION(, int32_t, int16_t, int32_t)
+            DEST_OPERATION(OP_SIGNED_MOV, (int64_t)ins->imm.sdword[0], ins->imm.sword[0], ins->imm.sdword[0])
             break;
         default:
             log_err("Unimplemented opcode C7 extension %X", ins->modrm.reg);
@@ -93,8 +66,7 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
         case 0x31: {         /* XOR r/m16/32/64,r16/32/64 */
             void *src  = x64modrm_get_reg(emu, ins);
             void *dest = x64modrm_get_rm(emu, ins);
-            SX_OPERATION(^, int64_t, int16_t, int32_t)
-            CLEAR_CF_OF() UPDATE_SF_ZF() UPDATE_PF()
+            DEST_OPERATION(OP_BITWISE_XOR, *(int64_t *)src, *(int16_t *)src, *(int32_t *)src)
             break;
         }
 
@@ -111,7 +83,7 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
         case 0x63: {         /* MOVSXD r16/32/64,r/m16/32/32 */
             void *src  = x64modrm_get_rm(emu, ins);
             void *dest = x64modrm_get_reg(emu, ins);
-            SX_OPERATION(, int32_t, int16_t, int32_t)
+            DEST_OPERATION(OP_SIGNED_MOV, (int64_t)(*(int32_t *)src), *(int16_t *)src, *(int32_t *)src)
             break;
         }
 
@@ -123,7 +95,7 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
         case 0x89: {         /* MOV r/m16/32/64,r16/32/64 */
             void *src  = x64modrm_get_reg(emu, ins);
             void *dest = x64modrm_get_rm(emu, ins);
-            SX_OPERATION(, int64_t, int16_t, int32_t)
+            DEST_OPERATION(OP_SIGNED_MOV, *(int64_t *)src, *(int16_t *)src, *(int32_t *)src)
             break;
         }
 
