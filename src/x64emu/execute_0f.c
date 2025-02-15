@@ -23,11 +23,13 @@ bool x64execute_0f(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0x80 ... 0x8F:  /* Jcc rel16/32 */
-            if (x64execute_jmp_cond(emu, ins, op))
+            if (x64execute_jmp_cond(emu, ins, op)) {
                 if (ins->operand_sz)
                     r_eip += (int32_t)ins->imm.sword[0];
                 else
                     r_eip += ins->imm.sdword[0];
+                log_dump("Jump taken");
+            } else log_dump("Jump not taken");
             break;
 
         default:

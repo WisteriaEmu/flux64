@@ -103,6 +103,13 @@
 #define DEST_OPERATION_SX(operation, src) \
     DEST_OPERATION(operation, (int64_t)src, (int16_t)src, (int32_t)src)
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "x64emu.h"
+#include "x64instr.h"
+#include "x64flags_private.h"
+
 static inline bool x64execute_jmp_cond(x64emu_t *emu, x64instr_t *ins, uint8_t op) {
     bool ret = false;
     switch (op & 0xF) {
@@ -123,8 +130,6 @@ static inline bool x64execute_jmp_cond(x64emu_t *emu, x64instr_t *ins, uint8_t o
         case 0xE: ret =  f_ZF || f_SF != f_OF; break;
         case 0xF: ret = !f_ZF && f_SF == f_OF; break;
     }
-    if (ret) log_dump("Jump taken");
-    else log_dump("Jump not taken");
     return ret;
 }
 

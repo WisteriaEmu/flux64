@@ -114,8 +114,10 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
         }
 
         case 0x70 ... 0x7F:  /* Jcc rel8 */
-            if (x64execute_jmp_cond(emu, ins, op))
+            if (x64execute_jmp_cond(emu, ins, op)) {
                 r_eip += (int32_t)ins->imm.sbyte[0];
+                log_dump("Jump taken");
+            } else log_dump("Jump not taken");
             break;
 
         case 0x81:           /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m16/32/64,imm16/32/32 */
