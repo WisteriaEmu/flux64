@@ -13,35 +13,51 @@
 
 SET_DEBUG_CHANNEL("X64EXECUTE")
 
+/* Some ugly macros for repeating opcodes and their extensions. */
+
+#define OPCODE_EXT_CASE(case_op) \
+    case_op(0x0, OP_SIGNED_ADD) \
+    case_op(0x1, OP_BITWISE_OR) \
+    /* ADC */ \
+    /* SBB */ \
+    case_op(0x4, OP_BITWISE_AND) \
+    case_op(0x5, OP_SIGNED_SUB) \
+    case_op(0x6, OP_BITWISE_XOR) \
+    case_op(0x7, OP_SIGNED_CMP)
+
+static inline bool x64execute_81(x64emu_t *emu, x64instr_t *ins) {
+    void *dest = x64modrm_get_rm(emu, ins);
+#define CASE_OP(x, oper) \
+    case x: \
+        DEST_OPERATION(oper, (int64_t)ins->imm.sdword[0], ins->imm.sword[0], ins->imm.sdword[0]) \
+        break;
+
+    switch (ins->modrm.reg) {
+        OPCODE_EXT_CASE(CASE_OP)
+        default:
+            log_err("Unimplemented opcode 81 extension %X", ins->modrm.reg);
+            return false;
+    }
+#undef CASE_OP
+    return true;
+}
+
 static inline bool x64execute_83(x64emu_t *emu, x64instr_t *ins) {
     void *dest = x64modrm_get_rm(emu, ins);
+#define CASE_OP(x, oper) case x: DEST_OPERATION_SX(oper, ins->imm.sbyte[0]) break;
     switch (ins->modrm.reg) {
-        case 0x0:            /* ADD r/m16/32/64,imm8 */
-            DEST_OPERATION_SX(OP_SIGNED_ADD, ins->imm.sbyte[0])
-            break;
-        case 0x1:            /* OR  r/m16/32/64,imm8 */
-            DEST_OPERATION_SX(OP_BITWISE_OR, ins->imm.sbyte[0])
-            break;
-        /* ADC */
-        /* SBB */
-        case 0x4:            /* AND r/m16/32/64,imm8 */
-            DEST_OPERATION_SX(OP_BITWISE_AND, ins->imm.sbyte[0])
-            break;
-        case 0x5:            /* SUB r/m16/32/64,imm8 */
-            DEST_OPERATION_SX(OP_SIGNED_SUB, ins->imm.sbyte[0])
-            break;
-        case 0x6:            /* XOR r/m16/32/64,imm8 */
-            DEST_OPERATION_SX(OP_BITWISE_XOR, ins->imm.sbyte[0])
-            break;
-        case 0x7:            /* CMP r/m16/32/64,imm8 */
-            DEST_OPERATION_SX(OP_SIGNED_CMP, ins->imm.sbyte[0])
-            break;
+        OPCODE_EXT_CASE(CASE_OP)
         default:
             log_err("Unimplemented opcode 83 extension %X", ins->modrm.reg);
             return false;
     }
+#undef CASE_OP
     return true;
 }
+
+#undef OPCODE_EXT_CASE
+
+/* ugly macros end. */
 
 static inline bool x64execute_C7(x64emu_t *emu, x64instr_t *ins) {
     void *dest = x64modrm_get_rm(emu, ins);
@@ -126,6 +142,11 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             } else {
                 log_dump("Jump not taken.");
             }
+            break;
+
+        case 0x81:           /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m16/32/64,imm16/32/32 */
+            if (!x64execute_81(emu, ins))
+                return false;
             break;
 
         case 0x83:           /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m16/32/64,imm8 */

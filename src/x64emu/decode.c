@@ -65,6 +65,22 @@ static inline uint8_t decode_prefixes(x64emu_t *emu, x64instr_t *ins) {
     }
 }
 
+static inline void fetch_imm_16_32_32(x64emu_t *emu, x64instr_t *ins) {
+    if (ins->operand_sz)
+        ins->imm.word[0]  = fetch_16(emu, ins);
+    else
+        ins->imm.dword[0] = fetch_32(emu, ins);
+}
+
+static inline void fetch_imm_16_32_64(x64emu_t *emu, x64instr_t *ins) {
+    if (ins->rex.w)
+        ins->imm.qword[0] = fetch_64(emu, ins);
+    else if (ins->operand_sz)
+        ins->imm.word[0]  = fetch_16(emu, ins);
+    else
+        ins->imm.dword[0] = fetch_32(emu, ins);
+}
+
 bool x64decode(x64emu_t *emu, x64instr_t *ins) {
     ins->opcode[0] = decode_prefixes(emu, ins);
 
@@ -92,6 +108,11 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             ins->imm.byte[0] = fetch_8(emu, ins);
             break;
 
+        case 0x81:           /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m16/32/64,imm16/32/32 */
+            x64modrm_fetch(emu, ins);
+            fetch_imm_16_32_32(emu, ins);
+            break;
+
         case 0x83:           /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m16/32/64,imm8 */
             x64modrm_fetch(emu, ins);
             ins->imm.byte[0] = fetch_8(emu, ins);
@@ -110,20 +131,12 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0xB8 ... 0xBF:  /* MOV+r16/32/64 imm16/32/64 */
-            if (ins->rex.w)
-                ins->imm.qword[0] = fetch_64(emu, ins);
-            else if (ins->operand_sz)
-                ins->imm.word[0]  = fetch_16(emu, ins);
-            else
-                ins->imm.dword[0] = fetch_32(emu, ins);
+            fetch_imm_16_32_64(emu, ins);
             break;
 
         case 0xC7:           /* MOV r/m16/32/64,imm16/32/32 */
             x64modrm_fetch(emu, ins);
-            if (ins->operand_sz)
-                ins->imm.word[0]  = fetch_16(emu, ins);
-            else
-                ins->imm.dword[0] = fetch_32(emu, ins);
+            fetch_imm_16_32_32(emu, ins);
             break;
 
         case 0xE8:           /* CALL rel32 */
