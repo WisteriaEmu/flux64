@@ -88,6 +88,10 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             x64modrm_fetch(emu, ins);
             break;
 
+        case 0x70 ... 0x7F:  /* Jcc rel8 */
+            ins->imm.byte[0] = fetch_8(emu, ins);
+            break;
+
         case 0x83:           /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m16/32/64,imm8 */
             x64modrm_fetch(emu, ins);
             ins->imm.byte[0] = fetch_8(emu, ins);
