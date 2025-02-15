@@ -128,6 +128,10 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             ins->imm.byte[0] = fetch_8(emu, ins);
             break;
 
+        case 0x85:           /* TEST r/m16/32/64,r16/32/64 */
+            x64modrm_fetch(emu, ins);
+            break;
+
         case 0x89:           /* MOV r/m16/32/64,r16/32/64 */
             x64modrm_fetch(emu, ins);
             break;

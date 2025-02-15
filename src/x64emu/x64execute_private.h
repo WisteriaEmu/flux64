@@ -10,18 +10,33 @@
 
 /* Perform bitwise operation and update flags. */
 /* NOTE: state of AF is undefined. */
-#define OP_BITWISE(oper, s_type, u_type, operand) { \
+#define OP_BITWISE_IMPL(oper, s_type, u_type, operand) { \
     *(s_type *)dest oper ## = (operand); \
     SET_RESULT_FLAGS(*(s_type *)dest) \
     f_CF = f_OF = 0; \
 }
 
+#define OP_BITWISE_TEST_IMPL(oper, s_type, u_type, operand) { \
+    s_type _res = (*(s_type *)dest) oper (operand); \
+    SET_RESULT_FLAGS(_res) \
+    f_CF = f_OF = 0; \
+}
+
 /* `*dest ^= operand`, update flags. */
-#define OP_BITWISE_XOR(s_type, u_type, operand) OP_BITWISE(^, s_type, u_type, operand)
+#define OP_BITWISE_XOR(s_type, u_type, operand) \
+    OP_BITWISE_IMPL(^, s_type, u_type, operand)
+
 /* `*dest &= operand`, update flags. */
-#define OP_BITWISE_AND(s_type, u_type, operand) OP_BITWISE(&, s_type, u_type, operand)
+#define OP_BITWISE_AND(s_type, u_type, operand) \
+    OP_BITWISE_IMPL(&, s_type, u_type, operand)
+
+/* Same as AND, but discarding result. */
+#define OP_BITWISE_TEST_AND(s_type, u_type, operand) \
+    OP_BITWISE_TEST_IMPL(&, s_type, u_type, operand)
+
 /* `*dest |= operand`, update flags. */
-#define OP_BITWISE_OR(s_type, u_type, operand)  OP_BITWISE(|, s_type, u_type, operand)
+#define OP_BITWISE_OR(s_type, u_type, operand) \
+    OP_BITWISE_IMPL(|, s_type, u_type, operand)
 
 /* `*dest += operand`, update flags.
    CF, AF as unsigned, OF as signed.
@@ -46,7 +61,7 @@
     f_OF = ((operand) >= 0 && _sav <  0 && _res >= 0) || \
            ((operand) <  0 && _sav >= 0 && _res <  0);
 
-/* Same as SUB, but does throws away the result. */
+/* Same as SUB, but discarding result. */
 #define OP_SIGNED_CMP(s_type, u_type, operand) { \
     OP_SIGNED_CMP_IMPL(s_type, u_type, operand) \
 }
@@ -64,7 +79,7 @@
     *(s_type *)dest = operand; \
 }
 
-/* `*dest = operand`, RCX times if rep specified. */
+/* `*dest = operand`, RCX/ECX times if rep specified. */
 #define OP_UNSIGNED_MOV_REP(s_type, u_type, operand) { \
     u_type *tdest = (u_type *)dest; \
     if (!ins->rep) *tdest = operand; \

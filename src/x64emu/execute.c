@@ -154,6 +154,12 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
                 return false;
             break;
 
+        case 0x85:           /* TEST r/m16/32/64,r16/32/64 */
+            void *src  = x64modrm_get_reg(emu, ins);
+            void *dest = x64modrm_get_rm(emu, ins);
+            DEST_OPERATION(OP_BITWISE_TEST_AND, *(int64_t *)src, *(int16_t *)src, *(int32_t *)src)
+            break;
+
         case 0x89: {         /* MOV r/m16/32/64,r16/32/64 */
             void *src  = x64modrm_get_reg(emu, ins);
             void *dest = x64modrm_get_rm(emu, ins);
