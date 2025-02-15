@@ -8,6 +8,7 @@
     f_ZF = (x) == 0; \
     f_PF = !__builtin_parity((uint8_t)(x));
 
+
 /* Perform bitwise operation and update flags. */
 /* NOTE: state of AF is undefined. */
 #define OP_BITWISE_IMPL(oper, s_type, u_type, operand) { \
@@ -16,27 +17,33 @@
     f_CF = f_OF = 0; \
 }
 
+
 #define OP_BITWISE_TEST_IMPL(oper, s_type, u_type, operand) { \
     s_type _res = (*(s_type *)dest) oper (operand); \
     SET_RESULT_FLAGS(_res) \
     f_CF = f_OF = 0; \
 }
 
+
 /* `*dest ^= operand`, update flags. */
 #define OP_BITWISE_XOR(s_type, u_type, operand) \
     OP_BITWISE_IMPL(^, s_type, u_type, operand)
+
 
 /* `*dest &= operand`, update flags. */
 #define OP_BITWISE_AND(s_type, u_type, operand) \
     OP_BITWISE_IMPL(&, s_type, u_type, operand)
 
+
 /* Same as AND, but discarding result. */
 #define OP_BITWISE_TEST_AND(s_type, u_type, operand) \
     OP_BITWISE_TEST_IMPL(&, s_type, u_type, operand)
 
+
 /* `*dest |= operand`, update flags. */
 #define OP_BITWISE_OR(s_type, u_type, operand) \
     OP_BITWISE_IMPL(|, s_type, u_type, operand)
+
 
 /* `*dest += operand`, update flags.
    CF, AF as unsigned, OF as signed.
@@ -52,6 +59,7 @@
     *(s_type *)dest = _res; \
 }
 
+
 #define OP_SIGNED_CMP_IMPL(s_type, u_type, operand) \
     s_type _sav = *(s_type *)dest; \
     s_type _res = _sav - (operand); \
@@ -61,10 +69,12 @@
     f_OF = ((operand) >= 0 && _sav <  0 && _res >= 0) || \
            ((operand) <  0 && _sav >= 0 && _res <  0);
 
+
 /* Same as SUB, but discarding result. */
 #define OP_SIGNED_CMP(s_type, u_type, operand) { \
     OP_SIGNED_CMP_IMPL(s_type, u_type, operand) \
 }
+
 
 /* `*dest -= operand`, update flags.
    CF, AF as unsigned, OF as signed.
@@ -74,15 +84,18 @@
     *(s_type *)dest = _res; \
 }
 
+
 /* `*dest = operand` */
 #define OP_SIGNED_MOV(s_type, u_type, operand) { \
     *(s_type *)dest = operand; \
 }
 
+
 /* `*dest = operand` */
 #define OP_UNSIGNED_MOV(s_type, u_type, operand) { \
     *(u_type *)dest = operand; \
 }
+
 
 /* `*dest = operand`, RCX/ECX times if rep specified. */
 #define OP_UNSIGNED_MOV_REP(s_type, u_type, operand) { \
@@ -98,15 +111,127 @@
             else      *(tdest++) = operand; \
 }
 
+
+/* dest: r/m, src: reg, from ModR/M byte fields. */
+#define GET_DEST_RM_SRC_REG() \
+    void *src  = x64modrm_get_reg(emu, ins); \
+    void *dest = x64modrm_get_rm(emu, ins);
+
+/* dest: reg, src: r/m, from ModR/M byte fields. */
+#define GET_DEST_REG_SRC_RM() \
+    void *src  = x64modrm_get_rm(emu, ins); \
+    void *dest = x64modrm_get_reg(emu, ins);
+
 /* Perform specified operation on dest using src operands. */
 #define DEST_OPERATION(operation, src64, src16, src32) \
     if      (ins->rex.w)      operation(int64_t, uint64_t, src64) \
     else if (ins->operand_sz) operation(int16_t, uint16_t, src16) \
     else                      operation(int32_t, uint32_t, src32)
 
-/* Perform specified operation on dest using byte or word sign-extended operand. */
-#define DEST_OPERATION_SX(operation, src) \
-    DEST_OPERATION(operation, (int64_t)src, (int16_t)src, (int32_t)src)
+
+/* Perform signed operation on dest with src operand, always sign-extending.
+    NOTE: src is a pointer */
+#define DEST_OPERATION_S_8(operation, src) \
+    DEST_OPERATION(operation, (int64_t)(*(int8_t *)(src)), (int16_t)(*(int8_t *)(src)), (int32_t)(*(int8_t *)(src)))
+
+
+/* Perform unsigned operation on dest with src operand, always sign-extending.
+   NOTE: src is a pointer */
+#define DEST_OPERATION_U_8(operation, src) \
+    DEST_OPERATION(operation, (uint64_t)(*(uint8_t *)(src)), (uint16_t)(*(uint8_t *)(src)), (uint32_t)(*(uint8_t *)(src)))
+
+
+/* Perform signed operation on dest with src operand, always sign-extending.
+    NOTE: src is a pointer */
+#define DEST_OPERATION_S_16(operation, src) \
+    DEST_OPERATION(operation, (int64_t)(*(int16_t *)(src)), (int16_t)(*(int16_t *)(src)), (int32_t)(*(int16_t *)(src)))
+
+
+/* Perform unsigned operation on dest with src operand, always sign-extending.
+   NOTE: src is a pointer */
+#define DEST_OPERATION_U_16(operation, src) \
+    DEST_OPERATION(operation, (uint64_t)(*(uint16_t *)(src)), (uint16_t)(*(uint16_t *)(src)), (uint32_t)(*(uint16_t *)(src)))
+
+
+/* Perform signed operation on dest with src operand, without extension.
+   NOTE: src is a pointer */
+#define DEST_OPERATION_S_64(operation, src) \
+    DEST_OPERATION(operation, *(int64_t *)(src), *(int16_t *)(src), *(int32_t *)(src))
+
+/* Perform unsigned operation on dest with src operand, without extension.
+   NOTE: src is a pointer */
+#define DEST_OPERATION_U_64(operation, src) \
+    DEST_OPERATION(operation, *(uint64_t *)(src), *(uint16_t *)(src), *(uint32_t *)(src))
+
+
+/* Perform signed operation on dest with src operand, sign-extending when 64 bit dest.
+   NOTE: src is a pointer */
+#define DEST_OPERATION_S_32(operation, src) \
+    DEST_OPERATION(operation, (int64_t)(*(int32_t *)(src)), *(int16_t *)(src), *(int32_t *)(src))
+
+/* Perform unsigned operation on dest with src operand, zero-extending when 64 bit dest.
+   NOTE: src is a pointer */
+#define DEST_OPERATION_U_32(operation, src) \
+    DEST_OPERATION(operation, (uint64_t)(*(uint32_t *)(src)), *(uint16_t *)(src), *(uint32_t *)(src))
+
+
+
+/* Combined macros */
+
+/* Perform signed operation using r/m as dest and reg as src, without extension. */
+#define DEST_RM_SRC_REG_OPERATION_S(operation, ext) { \
+    GET_DEST_RM_SRC_REG() \
+    DEST_OPERATION_S_ ## ext(operation, src) \
+}
+
+/* Perform unsigned operation using r/m as dest and reg as src, without extension. */
+#define DEST_RM_SRC_REG_OPERATION_U(operation, ext) { \
+    GET_DEST_RM_SRC_REG() \
+    DEST_OPERATION_U_ ## ext(operation, src) \
+}
+
+
+/* Perform signed operation using reg as dest and r/m as src, without extension. */
+#define DEST_REG_SRC_RM_OPERATION_S(operation, ext) { \
+    GET_DEST_REG_SRC_RM() \
+    DEST_OPERATION_S_ ## ext(operation, src) \
+}
+
+/* Perform unsigned operation using reg as dest and r/m as src, without extension. */
+#define DEST_REG_SRC_RM_OPERATION_U(operation, ext) { \
+    GET_DEST_REG_SRC_RM() \
+    DEST_OPERATION_U_ ## ext(operation, src) \
+}
+
+
+
+/* Perform signed operation using r/m as dest and reg as src, without extension, with fixed type. */
+#define DEST_RM_SRC_REG_OPERATION_S_FIXED(operation, s_type, u_type) { \
+    GET_DEST_RM_SRC_REG() \
+    operation(s_type, u_type, *(s_type *)(src)) \
+}
+
+/* Perform unsigned operation using r/m as dest and reg as src, without extension, with fixed type. */
+#define DEST_RM_SRC_REG_OPERATION_U_FIXED(operation, s_type, u_type) { \
+    GET_DEST_RM_SRC_REG() \
+    operation(s_type, u_type, *(u_type *)(src)) \
+}
+
+
+/* Perform signed operation using reg as dest and r/m as src, without extension, with fixed type. */
+#define DEST_REG_SRC_RM_OPERATION_S_FIXED(operation, s_type, u_type) { \
+    GET_DEST_REG_SRC_RM() \
+    operation(s_type, u_type, *(s_type *)(src)) \
+}
+
+/* Perform unsigned operation using reg as dest and r/m as src, without extension, with fixed type. */
+#define DEST_REG_SRC_RM_OPERATION_U_FIXED(operation, s_type, u_type) { \
+    GET_DEST_REG_SRC_RM() \
+    operation(s_type, u_type, *(u_type *)(src)) \
+}
+
+
+
 
 #include <stdbool.h>
 #include <stdint.h>

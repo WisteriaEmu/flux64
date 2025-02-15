@@ -15,15 +15,15 @@ bool x64execute_0f(x64emu_t *emu, x64instr_t *ins) {
     uint8_t op = ins->opcode[1];
 
     switch (op) {
-        case 0x05:           /* SYSCALL */
+        case 0x05:            /* SYSCALL */
             if (!x64syscall(emu))
                 return false;
             break;
 
-        case 0x18 ... 0x1F:  /* HINT_NOP */
+        case 0x18 ... 0x1F:   /* HINT_NOP */
             break;
 
-        case 0x80 ... 0x8F:  /* Jcc rel16/32 */
+        case 0x80 ... 0x8F:   /* Jcc rel16/32 */
             if (x64execute_jmp_cond(emu, ins, op)) {
                 if (ins->operand_sz)
                     r_eip += (int32_t)ins->imm.sword[0];
@@ -33,21 +33,13 @@ bool x64execute_0f(x64emu_t *emu, x64instr_t *ins) {
             } else log_dump("Jump not taken");
             break;
 
-        case 0xB6: {         /* MOVZX r16/32/64,r/m8 */
-            void *src  = x64modrm_get_rm(emu, ins);
-            void *dest = x64modrm_get_reg(emu, ins);
-            DEST_OPERATION(OP_UNSIGNED_MOV, (uint64_t)(*(uint8_t *)src),
-                           (uint16_t)(*(uint8_t *)src), (uint32_t)(*(uint8_t *)src))
+        case 0xB6:            /* MOVZX r16/32/64,r/m8 */
+            DEST_REG_SRC_RM_OPERATION_U(OP_UNSIGNED_MOV, 8)
             break;
-        }
 
-        case 0xB7: {         /* MOVZX r16/32/64,r/m16 */
-            void *src  = x64modrm_get_rm(emu, ins);
-            void *dest = x64modrm_get_reg(emu, ins);
-            DEST_OPERATION(OP_UNSIGNED_MOV, (uint64_t)(*(uint16_t *)src),
-                           *(uint16_t *)src, (uint32_t)(*(uint16_t *)src))
+        case 0xB7:            /* MOVZX r16/32/64,r/m16 */
+            DEST_REG_SRC_RM_OPERATION_U(OP_UNSIGNED_MOV, 16)
             break;
-        }
 
         default:
             log_err("Unimplemented opcode 0F %02X", op);

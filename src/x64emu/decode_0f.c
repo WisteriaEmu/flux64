@@ -14,21 +14,21 @@ bool x64decode_0f(x64emu_t *emu, x64instr_t *ins) {
     ins->opcode[1] = fetch_8(emu, ins);
 
     switch (ins->opcode[1]) {
-        case 0x05:           /* SYSCALL */
+        case 0x05:            /* SYSCALL */
             break;
 
-        case 0x18 ... 0x1F:  /* HINT_NOP */
+        case 0x18 ... 0x1F:   /* HINT_NOP */
             x64modrm_fetch(emu, ins);
             break;
 
-        case 0x80 ... 0x8F:  /* Jcc rel16/32 */
+        case 0x80 ... 0x8F:   /* Jcc rel16/32 */
             if (ins->operand_sz)
                 ins->imm.word[0] = fetch_16(emu, ins);
             else
                 ins->imm.dword[0] = fetch_32(emu, ins);
             break;
 
-        case 0xB6 ... 0xB7:  /* MOVZX r16/32/64,r/m8 / r16/32/64,r/m16 */
+        case 0xB6 ... 0xB7:   /* MOVZX r16/32/64,r/m8 / r16/32/64,r/m16 */
             x64modrm_fetch(emu, ins);
             break;
 

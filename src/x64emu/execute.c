@@ -29,7 +29,7 @@ static inline bool x64execute_81(x64emu_t *emu, x64instr_t *ins) {
     void *dest = x64modrm_get_rm(emu, ins);
 #define CASE_OP(x, oper) \
     case x: \
-        DEST_OPERATION(oper, (int64_t)ins->imm.sdword[0], ins->imm.sword[0], ins->imm.sdword[0]) \
+        DEST_OPERATION_S_32(oper, &ins->imm) \
         break;
 
     switch (ins->modrm.reg) {
@@ -44,7 +44,7 @@ static inline bool x64execute_81(x64emu_t *emu, x64instr_t *ins) {
 
 static inline bool x64execute_83(x64emu_t *emu, x64instr_t *ins) {
     void *dest = x64modrm_get_rm(emu, ins);
-#define CASE_OP(x, oper) case x: DEST_OPERATION_SX(oper, ins->imm.sbyte[0]) break;
+#define CASE_OP(x, oper) case x: DEST_OPERATION_S_8(oper, &ins->imm) break;
     switch (ins->modrm.reg) {
         OPCODE_EXT_CASE(CASE_OP)
         default:
@@ -62,9 +62,8 @@ static inline bool x64execute_83(x64emu_t *emu, x64instr_t *ins) {
 static inline bool x64execute_C7(x64emu_t *emu, x64instr_t *ins) {
     void *dest = x64modrm_get_rm(emu, ins);
     switch (ins->modrm.reg) {
-        case 0x0:            /* MOV r/m16/32/64,imm16/32/32 */
-            DEST_OPERATION(OP_SIGNED_MOV, (int64_t)ins->imm.sdword[0],
-                           ins->imm.sword[0], ins->imm.sdword[0])
+        case 0x0:             /* MOV r/m16/32/64,imm16/32/32 */
+            DEST_OPERATION_S_32(OP_SIGNED_MOV, &ins->imm)
             break;
         default:
             log_err("Unimplemented opcode C7 extension %X", ins->modrm.reg);
@@ -73,23 +72,62 @@ static inline bool x64execute_C7(x64emu_t *emu, x64instr_t *ins) {
     return true;
 }
 
+
 bool x64execute(x64emu_t *emu, x64instr_t *ins) {
     uint8_t op = ins->opcode[0];
 
+    /* Get ready for ugly macros... */
+
     switch (op) {
-        case 0x0F:           /* Two-byte opcodes */
+
+#define OPCODE_FAMILY(start, oper) \
+        case start + 0x00:    /* r/m8,r8 */ \
+            DEST_RM_SRC_REG_OPERATION_S_FIXED(oper, int8_t, uint8_t) \
+            break; \
+        case start + 0x01:    /* r/m16/32/64,r16/32/64 */ \
+            DEST_RM_SRC_REG_OPERATION_S(oper, 64) \
+            break; \
+        case start + 0x02:    /* r8,r/m8 */ \
+            DEST_REG_SRC_RM_OPERATION_S_FIXED(oper, int8_t, uint8_t) \
+            break; \
+        case start + 0x03:    /* r16/32/64,r/m16/32/64 */ \
+            DEST_REG_SRC_RM_OPERATION_S(oper, 64) \
+            break; \
+        case start + 0x04: {  /* al,imm8 */ \
+            void *dest = emu->regs + _rax; \
+            oper(int8_t, uint8_t, ins->imm.sbyte[0]) \
+            break; \
+        } \
+        case start + 0x05: {  /* ax/eax/rax,imm16/32/32 */ \
+            void *dest = emu->regs + _rax; \
+            DEST_OPERATION_S_32(oper, &ins->imm) \
+            break; \
+        }
+
+        OPCODE_FAMILY(0x00, OP_SIGNED_ADD)    /* 00..05 ADD */
+
+        OPCODE_FAMILY(0x08, OP_BITWISE_OR)    /* 08..0D OR */
+
+        /* ADC */
+
+        /* SBB */
+
+        OPCODE_FAMILY(0x20, OP_BITWISE_AND)   /* 20..25 AND */
+
+        OPCODE_FAMILY(0x28, OP_SIGNED_SUB)    /* 28..2D SUB */
+
+        OPCODE_FAMILY(0x30, OP_BITWISE_XOR)   /* 30..35 XOR */
+
+        OPCODE_FAMILY(0x38, OP_SIGNED_CMP)    /* 38..3D CMP */
+
+#undef OPCODE_FAMILY
+
+        case 0x0F:            /* Two-byte opcodes */
             if (!x64execute_0f(emu, ins))
                 return false;
             break;
 
-        case 0x31: {         /* XOR r/m16/32/64,r16/32/64 */
-            void *src  = x64modrm_get_reg(emu, ins);
-            void *dest = x64modrm_get_rm(emu, ins);
-            DEST_OPERATION(OP_BITWISE_XOR, *(int64_t *)src, *(int16_t *)src, *(int32_t *)src)
-            break;
-        }
-
-        case 0x50 ... 0x57: {/* PUSH+r16/64 */
+        case 0x50 ... 0x57: { /* PUSH+r16/64 */
             void *v = emu->regs + ((op & 7) | (ins->rex.b << 3));
             if (ins->operand_sz)
                 push_16(emu, *(uint16_t *)v);
@@ -98,7 +136,7 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             break;
         }
 
-        case 0x58 ... 0x5F: {/* POP+r16/64 */
+        case 0x58 ... 0x5F: { /* POP+r16/64 */
             void *v = emu->regs + ((op & 7) | (ins->rex.b << 3));
             if (ins->operand_sz)
                 *(uint16_t *)v = pop_16(emu);
@@ -107,79 +145,66 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             break;
         }
 
-        case 0x63: {         /* MOVSXD r16/32/64,r/m16/32/32 */
-            void *src  = x64modrm_get_rm(emu, ins);
-            void *dest = x64modrm_get_reg(emu, ins);
-            DEST_OPERATION(OP_SIGNED_MOV, (int64_t)(*(int32_t *)src),
-                           *(int16_t *)src, *(int32_t *)src)
+        case 0x63:            /* MOVSXD r16/32/64,r/m16/32/32 */
+            DEST_REG_SRC_RM_OPERATION_S(OP_SIGNED_MOV, 32)
             break;
-        }
 
-        case 0x70 ... 0x7F:  /* Jcc rel8 */
+        case 0x70 ... 0x7F:   /* Jcc rel8 */
             if (x64execute_jmp_cond(emu, ins, op)) {
                 r_eip += (int32_t)ins->imm.sbyte[0];
                 log_dump("Jump taken");
             } else log_dump("Jump not taken");
             break;
 
-        case 0x81:           /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m16/32/64,imm16/32/32 */
+        case 0x81:            /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m16/32/64,imm16/32/32 */
             if (!x64execute_81(emu, ins))
                 return false;
             break;
 
-        case 0x83:           /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m16/32/64,imm8 */
+        case 0x83:            /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m16/32/64,imm8 */
             if (!x64execute_83(emu, ins))
                 return false;
             break;
 
-        case 0x85:           /* TEST r/m16/32/64,r16/32/64 */
-            void *src  = x64modrm_get_reg(emu, ins);
-            void *dest = x64modrm_get_rm(emu, ins);
-            DEST_OPERATION(OP_BITWISE_TEST_AND, *(int64_t *)src, *(int16_t *)src, *(int32_t *)src)
+        case 0x85:            /* TEST r/m16/32/64,r16/32/64 */
+            DEST_RM_SRC_REG_OPERATION_S(OP_BITWISE_TEST_AND, 64)
             break;
 
-        case 0x89: {         /* MOV r/m16/32/64,r16/32/64 */
-            void *src  = x64modrm_get_reg(emu, ins);
-            void *dest = x64modrm_get_rm(emu, ins);
-            DEST_OPERATION(OP_UNSIGNED_MOV, *(uint64_t *)src, *(uint16_t *)src, *(uint32_t *)src)
+        case 0x89:            /* MOV r/m16/32/64,r16/32/64 */
+            DEST_RM_SRC_REG_OPERATION_U(OP_UNSIGNED_MOV, 64)
             break;
-        }
 
-        case 0x8B: {         /* MOV r16/32/64,r/m16/32/64 */
-            void *src  = x64modrm_get_rm(emu, ins);
-            void *dest = x64modrm_get_reg(emu, ins);
-            DEST_OPERATION(OP_UNSIGNED_MOV, *(uint64_t *)src, *(uint16_t *)src, *(uint32_t *)src)
+        case 0x8B:            /* MOV r16/32/64,r/m16/32/64 */
+            DEST_REG_SRC_RM_OPERATION_U(OP_UNSIGNED_MOV, 64)
             break;
-        }
 
-        case 0x8D: {         /* LEA r16/32/64,m */
+        case 0x8D: {          /* LEA r16/32/64,m */
             /* avoiding warning. */
             uintptr_t src = (uintptr_t)x64modrm_get_rm(emu, ins);
             void *dest = x64modrm_get_reg(emu, ins);
-            /* Treating src as operand w/o dereferencing,
-               signed/unsigned does not change behavior. */
+            /* src is operand, not a pointer. */
             DEST_OPERATION(OP_UNSIGNED_MOV, (uint64_t)src, (uint16_t)src, (uint32_t)src)
             break;
         }
 
-        case 0xAB: {         /* STOS m16/32/64 */
+        case 0xAB: {          /* STOS m16/32/64 */
             uint64_t dest = (ins->address_sz) ? r_edi : r_rdi;
-            DEST_OPERATION(OP_UNSIGNED_MOV_REP, r_rax, r_ax, r_eax)
+            DEST_OPERATION_U_64(OP_UNSIGNED_MOV_REP, emu->regs + _rax)
             break;
         }
 
-        case 0xB8 ... 0xBF: {/* MOV+r16/32/64 imm16/32/64 */
+        case 0xB8 ... 0xBF: { /* MOV+r16/32/64 imm16/32/64 */
             void *dest = emu->regs + ((op & 7) | (ins->rex.b << 3));
-            DEST_OPERATION(OP_UNSIGNED_MOV, ins->imm.qword[0], ins->imm.word[0], ins->imm.byte[0])
+            DEST_OPERATION_U_64(OP_UNSIGNED_MOV, &ins->imm)
             break;
         }
 
-        case 0xC7:           /* MOV r/m16/32/64,imm16/32/32 */
+        case 0xC7:            /* MOV r/m16/32/64,imm16/32/32 */
             if (!x64execute_C7(emu, ins))
                 return false;
             break;
 
-        case 0xE8:           /* CALL rel32 */
+        case 0xE8:            /* CALL rel32 */
             if (ins->address_sz)
                 push_32(emu, r_eip);
             else
