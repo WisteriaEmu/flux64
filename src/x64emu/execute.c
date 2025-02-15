@@ -107,6 +107,16 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             break;
         }
 
+        case 0x8D: {         /* LEA r16/32/64,m */
+            /* avoiding warning. */
+            uintptr_t src = (uintptr_t)x64modrm_get_rm(emu, ins);
+            void *dest = x64modrm_get_reg(emu, ins);
+            /* Treating src as operand w/o dereferencing,
+               signed/unsigned does not change behavior. */
+            DEST_OPERATION(OP_SIGNED_MOV, (int64_t)src, (int16_t)src, (int32_t)src)
+            break;
+        }
+
         case 0xB8 ... 0xBF: {/* MOV+r16/32/64 imm16/32/64 */
             void *dest = emu->regs + ((op & 7) | (ins->rex.b << 3));
             DEST_OPERATION(OP_SIGNED_MOV, ins->imm.sqword[0], ins->imm.sword[0], ins->imm.sbyte[0])

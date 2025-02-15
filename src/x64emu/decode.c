@@ -97,6 +97,10 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             x64modrm_fetch(emu, ins);
             break;
 
+        case 0x8D:           /* LEA r16/32/64,m */
+            x64modrm_fetch(emu, ins);
+            break;
+
         case 0xB8 ... 0xBF:  /* MOV+r16/32/64 imm16/32/64 */
             if (ins->rex.w)
                 ins->imm.qword[0] = fetch_64(emu, ins);
