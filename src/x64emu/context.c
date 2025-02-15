@@ -34,7 +34,7 @@ static bool segments_free(x64context_t *ctx) {
 
 bool x64context_init(x64context_t *ctx, int argc, char *argv[], char *envp[]) {
     int envc = 0;
-    while (envp[++envc]) {}
+    while (envp[envc]) { envc++; }
 
     /* first argument is emulator binary, remove it. */
     ctx->argc = argc - 1;

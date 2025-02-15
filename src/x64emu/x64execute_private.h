@@ -64,9 +64,22 @@
     *(s_type *)dest = operand; \
 }
 
+/* `*dest = operand`, RCX times if rep specified. */
+#define OP_UNSIGNED_MOV_REP(s_type, u_type, operand) { \
+    u_type *tdest = (u_type *)dest; \
+    if (!ins->rep) *tdest = operand; \
+    else if (ins->address_sz) \
+        for (; r_ecx; r_ecx--) \
+            if (f_DF) *(tdest--) = operand; \
+            else      *(tdest++) = operand; \
+    else \
+        for (; r_rcx; r_rcx--) \
+            if (f_DF) *(tdest--) = operand; \
+            else      *(tdest++) = operand; \
+}
+
 /* Perform specified operation on dest using src operands. */
 #define DEST_OPERATION(operation, src64, src16, src32) \
-    if (!dest) return false; \
     if      (ins->rex.w)      operation(int64_t, uint64_t, src64) \
     else if (ins->operand_sz) operation(int16_t, uint16_t, src16) \
     else                      operation(int32_t, uint32_t, src32)

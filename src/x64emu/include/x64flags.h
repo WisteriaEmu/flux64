@@ -24,8 +24,8 @@ typedef union {
         uint64_t RF   : 1;  /*    16  Resume Flag */
         uint64_t VM   : 1;  /*    17  Virtual-8086 Mode */
         uint64_t AC   : 1;  /*    18  Alignment Check/Access Control */
-        uint64_t VIF  : 1;  /*    19  Virtual Interrupt Pending */
-        uint64_t VIP  : 1;  /*    20  Virtual Interrupt Flag */
+        uint64_t VIF  : 1;  /*    19  Virtual Interrupt Flag */
+        uint64_t VIP  : 1;  /*    20  Virtual Interrupt Pending */
         uint64_t ID   : 1;  /*    21  ID Flag */
         uint64_t      : 42; /* 22-63  Reserved */
     };

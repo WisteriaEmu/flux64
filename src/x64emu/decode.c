@@ -140,6 +140,9 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             x64modrm_fetch(emu, ins);
             break;
 
+        case 0xAB:           /* STOS m16/32/64 */
+            break;
+
         case 0xB8 ... 0xBF:  /* MOV+r16/32/64 imm16/32/64 */
             fetch_imm_16_32_64(emu, ins);
             break;

@@ -137,8 +137,7 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
 
         case 0x70 ... 0x7F:  /* Jcc rel8 */
             if (x64execute_7x_cond(emu, ins, op)) {
-                /* FIXME: Should be EIP. */
-                r_rip += ins->imm.sbyte[0];
+                r_eip += (int32_t)ins->imm.sbyte[0];
                 log_dump("Jump taken.");
             } else {
                 log_dump("Jump not taken.");
@@ -179,6 +178,12 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             break;
         }
 
+        case 0xAB: {         /* STOS m16/32/64 */
+            uint64_t dest = (ins->address_sz) ? r_edi : r_rdi;
+            DEST_OPERATION(OP_UNSIGNED_MOV_REP, r_rax, r_ax, r_eax)
+            break;
+        }
+
         case 0xB8 ... 0xBF: {/* MOV+r16/32/64 imm16/32/64 */
             void *dest = emu->regs + ((op & 7) | (ins->rex.b << 3));
             DEST_OPERATION(OP_SIGNED_MOV, ins->imm.sqword[0], ins->imm.sword[0], ins->imm.sbyte[0])
@@ -195,7 +200,6 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
                 push_32(emu, r_eip);
             else
                 push_64(emu, r_rip);
-            /* FIXME: Should be EIP in some cases. */
             r_rip += (int64_t)ins->imm.sdword[0];
             break;
 
