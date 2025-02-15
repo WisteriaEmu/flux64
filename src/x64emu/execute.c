@@ -33,7 +33,9 @@ static inline bool x64execute_83(x64emu_t *emu, x64instr_t *ins) {
         case 0x6:            /* XOR r/m16/32/64,imm8 */
             DEST_OPERATION_SX(OP_BITWISE_XOR, ins->imm.sbyte[0])
             break;
-        /* CMP */
+        case 0x7:            /* CMP r/m16/32/64,imm8 */
+            DEST_OPERATION_SX(OP_SIGNED_CMP, ins->imm.sbyte[0])
+            break;
         default:
             log_err("Unimplemented opcode 83 extension %X", ins->modrm.reg);
             return false;

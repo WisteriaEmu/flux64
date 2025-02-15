@@ -37,17 +37,25 @@
     *(s_type *)dest = _res; \
 }
 
-/* `*dest -= operand`, update flags.
-   CF, AF as unsigned, OF as signed.
-   operand should be signed type. */
-#define OP_SIGNED_SUB(s_type, u_type, operand) { \
+#define OP_SIGNED_CMP_IMPL(s_type, u_type, operand) \
     s_type _sav = *(s_type *)dest; \
     s_type _res = _sav - (operand); \
     SET_RESULT_FLAGS(_res) \
     f_CF = (u_type)_res > (u_type)_sav; \
     f_AF = (uint8_t)_res > (uint8_t)_sav; \
     f_OF = ((operand) >= 0 && _sav <  0 && _res >= 0) || \
-           ((operand) <  0 && _sav >= 0 && _res <  0); \
+           ((operand) <  0 && _sav >= 0 && _res <  0);
+
+/* Same as SUB, but does throws away the result. */
+#define OP_SIGNED_CMP(s_type, u_type, operand) { \
+    OP_SIGNED_CMP_IMPL(s_type, u_type, operand) \
+}
+
+/* `*dest -= operand`, update flags.
+   CF, AF as unsigned, OF as signed.
+   operand should be signed type. */
+#define OP_SIGNED_SUB(s_type, u_type, operand) { \
+    OP_SIGNED_CMP_IMPL(s_type, u_type, operand) \
     *(s_type *)dest = _res; \
 }
 
