@@ -70,15 +70,23 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             break;
         }
 
-        case 0x50 ... 0x57:  /* PUSH+r16/32/64 */
-            /* FIXME: Implement 16 and 32 bit versions. */
-            push_64(emu, r_reg64((op & 7) | (ins->rex.b << 3)));
+        case 0x50 ... 0x57: {/* PUSH+r16/64 */
+            void *v = emu->regs + ((op & 7) | (ins->rex.b << 3));
+            if (ins->operand_sz)
+                push_16(emu, *(uint16_t *)v);
+            else
+                push_64(emu, *(uint64_t *)v);
             break;
+        }
 
-        case 0x58 ... 0x5F:  /* POP+r16/32/64 */
-            /* FIXME: Implement 16 and 32 bit versions. */
-            r_reg64((op & 7) | (ins->rex.b << 3)) = pop_64(emu);
+        case 0x58 ... 0x5F: {/* POP+r16/64 */
+            void *v = emu->regs + ((op & 7) | (ins->rex.b << 3));
+            if (ins->operand_sz)
+                *(uint16_t *)v = pop_16(emu);
+            else
+                *(uint64_t *)v = pop_64(emu);
             break;
+        }
 
         case 0x63: {         /* MOVSXD r16/32/64,r/m16/32/32 */
             void *src  = x64modrm_get_rm(emu, ins);
@@ -99,11 +107,11 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             break;
         }
 
-        case 0xB8 ... 0xBF:  /* MOV+r16/32/64 imm16/32/64 */
-            /* FIXME: Implement 16 bit version. */
-            /* No need to zero-extend. */
-            r_reg64((op & 7) | (ins->rex.b << 3)) = ins->imm.qword[0];
+        case 0xB8 ... 0xBF: {/* MOV+r16/32/64 imm16/32/64 */
+            void *dest = emu->regs + ((op & 7) | (ins->rex.b << 3));
+            DEST_OPERATION(OP_SIGNED_MOV, ins->imm.sqword[0], ins->imm.sword[0], ins->imm.sbyte[0])
             break;
+        }
 
         case 0xC7:           /* MOV r/m16/32/64,imm16/32/32 */
             if (!x64execute_C7(emu, ins))
@@ -115,6 +123,7 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
                 push_32(emu, r_eip);
             else
                 push_64(emu, r_rip);
+            /* FIXME: Should be EIP in some cases. */
             r_rip += (int64_t)ins->imm.sdword[0];
             break;
 

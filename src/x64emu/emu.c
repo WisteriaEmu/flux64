@@ -6,6 +6,7 @@
 #include "x64decode.h"
 #include "x64execute.h"
 #include "x64regs_private.h"
+#include "x64flags_private.h"
 #include "x64stack.h"
 #include "debug.h"
 #include "x64flags.h"
@@ -37,8 +38,13 @@ void x64emu_run(x64emu_t *emu) {
         if (!x64decode(emu, &instr))
             return;
 
-
-        log_dump("%lx: %s", saved_rip, instr.desc.str);
+        log_dump("%lx: %-48s C/P/A/Z/S/OF: %x%x%x%x%x%x "
+                 "rax/cx/dx/bx: %lx %lx %lx %lx "
+                 "rsp/bp/si/di: %lx %lx %lx %lx",
+                 saved_rip, instr.desc.str,
+                 f_CF, f_PF, f_AF, f_ZF, f_SF, f_OF,
+                 r_rax, r_rcx, r_rdx, r_rbx,
+                 r_rsp, r_rbp, r_rsi, r_rdi);
 
         if (!x64execute(emu, &instr))
             return;

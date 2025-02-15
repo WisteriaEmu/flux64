@@ -17,6 +17,10 @@ SET_DEBUG_CHANNEL("X64STACK");
 
 /* stack operations */
 
+void push_16(x64emu_t *emu, uint16_t v) {
+    *(uint16_t *)(r_rsp -= 2) = v;
+}
+
 void push_32(x64emu_t *emu, uint32_t v) {
     *(uint32_t *)(r_rsp -= 4) = v;
 }
@@ -45,6 +49,14 @@ void push_string(x64emu_t *emu, const char *str) {
     int size = strlen(str) + 1; // NULL-terminated size
     r_rsp -= size;
     memcpy((void*)r_rsp, str, size);
+}
+
+uint16_t pop_16(x64emu_t *emu) {
+    return *(uint16_t *)(r_rsp += 2, r_rsp - 2);
+}
+
+uint32_t pop_32(x64emu_t *emu) {
+    return *(uint32_t *)(r_rsp += 4, r_rsp - 4);
 }
 
 uint64_t pop_64(x64emu_t *emu) {
