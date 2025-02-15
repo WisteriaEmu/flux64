@@ -13,6 +13,4 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins);
 
 bool x64decode_0f(x64emu_t *emu, x64instr_t *ins);
 
-void x64decode_dump(x64emu_t *emu, x64instr_t *ins);
-
 #endif /* __X64DECODE_H_ */
