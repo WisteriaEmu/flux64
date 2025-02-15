@@ -25,12 +25,26 @@ SET_DEBUG_CHANNEL("X64EXECUTE")
     case_op(0x6, OP_BITWISE_XOR) \
     case_op(0x7, OP_SIGNED_CMP)
 
+
+static inline bool x64execute_80(x64emu_t *emu, x64instr_t *ins) {
+    void *dest = x64modrm_get_rm(emu, ins);
+#define CASE_OP(x, oper) \
+    case x: oper(int8_t, uint8_t, ins->imm.sbyte[0]) break;
+
+    switch (ins->modrm.reg) {
+        OPCODE_EXT_CASE(CASE_OP)
+        default:
+            log_err("Unimplemented opcode 80 extension %X", ins->modrm.reg);
+            return false;
+    }
+#undef CASE_OP
+    return true;
+}
+
 static inline bool x64execute_81(x64emu_t *emu, x64instr_t *ins) {
     void *dest = x64modrm_get_rm(emu, ins);
 #define CASE_OP(x, oper) \
-    case x: \
-        DEST_OPERATION_S_32(oper, &ins->imm) \
-        break;
+    case x: DEST_OPERATION_S_32(oper, &ins->imm) break;
 
     switch (ins->modrm.reg) {
         OPCODE_EXT_CASE(CASE_OP)
@@ -44,7 +58,9 @@ static inline bool x64execute_81(x64emu_t *emu, x64instr_t *ins) {
 
 static inline bool x64execute_83(x64emu_t *emu, x64instr_t *ins) {
     void *dest = x64modrm_get_rm(emu, ins);
-#define CASE_OP(x, oper) case x: DEST_OPERATION_S_8(oper, &ins->imm) break;
+#define CASE_OP(x, oper) \
+    case x: DEST_OPERATION_S_8(oper, &ins->imm) break;
+
     switch (ins->modrm.reg) {
         OPCODE_EXT_CASE(CASE_OP)
         default:
@@ -156,6 +172,11 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             } else log_dump("Jump not taken");
             break;
 
+        case 0x80:            /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m8,imm8 */
+            if (!x64execute_80(emu, ins))
+                return false;
+            break;
+
         case 0x81:            /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m16/32/64,imm16/32/32 */
             if (!x64execute_81(emu, ins))
                 return false;
@@ -165,6 +186,12 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             if (!x64execute_83(emu, ins))
                 return false;
             break;
+
+        case 0x84: {          /* TEST r/m8,r8 */
+            GET_DEST_RM_SRC_REG()
+            OP_BITWISE_TEST_AND(int8_t, uint8_t, *(int8_t *)src)
+            break;
+        }
 
         case 0x85:            /* TEST r/m16/32/64,r16/32/64 */
             DEST_RM_SRC_REG_OPERATION_S(OP_BITWISE_TEST_AND, 64)
@@ -187,6 +214,9 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             break;
         }
 
+        case 0x90:            /* NOP/PAUSE */
+            break;
+
         case 0xAB: {          /* STOS m16/32/64 */
             uint64_t dest = (ins->address_sz) ? r_edi : r_rdi;
             DEST_OPERATION_U_64(OP_UNSIGNED_MOV_REP, emu->regs + _rax)
@@ -198,6 +228,17 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             DEST_OPERATION_U_64(OP_UNSIGNED_MOV, &ins->imm)
             break;
         }
+
+        case 0xC2:            /* RET imm16 */
+            /* FIXME: Still uncertain about size. */
+            r_rip = pop_64(emu);
+            r_rsp += ins->imm.word[0];
+            break;
+
+        case 0xC3:            /* RET */
+            /* FIXME: Still uncertain about size. */
+            r_rip = pop_64(emu);
+            break;
 
         case 0xC7:            /* MOV r/m16/32/64,imm16/32/32 */
             if (!x64execute_C7(emu, ins))
@@ -215,10 +256,8 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0xE8:            /* CALL rel32 */
-            if (ins->address_sz)
-                push_32(emu, r_eip);
-            else
-                push_64(emu, r_rip);
+            /* FIXME: Still uncertain about size. */
+            push_64(emu, r_rip);
             r_rip += (int64_t)ins->imm.sdword[0];
             break;
 

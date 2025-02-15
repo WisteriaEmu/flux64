@@ -148,6 +148,11 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             ins->imm.byte[0] = fetch_8(emu, ins);
             break;
 
+        case 0x80:            /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m8,imm8 */
+            x64modrm_fetch(emu, ins);
+            ins->imm.byte[0] = fetch_8(emu, ins);
+            break;
+
         case 0x81:            /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m16/32/64,imm16/32/32 */
             x64modrm_fetch(emu, ins);
             fetch_imm_16_32_32(emu, ins);
@@ -156,6 +161,10 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
         case 0x83:            /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m16/32/64,imm8 */
             x64modrm_fetch(emu, ins);
             ins->imm.byte[0] = fetch_8(emu, ins);
+            break;
+
+        case 0x84:            /* TEST r/m8,r8 */
+            x64modrm_fetch(emu, ins);
             break;
 
         case 0x85:            /* TEST r/m16/32/64,r16/32/64 */
@@ -174,11 +183,21 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             x64modrm_fetch(emu, ins);
             break;
 
+        case 0x90:            /* NOP/PAUSE */
+            break;
+
         case 0xAB:            /* STOS m16/32/64 */
             break;
 
         case 0xB8 ... 0xBF:   /* MOV+r16/32/64 imm16/32/64 */
             fetch_imm_16_32_64(emu, ins);
+            break;
+
+        case 0xC2:            /* RET imm16 */
+            ins->imm.word[0] = fetch_16(emu, ins);
+            break;
+
+        case 0xC3:            /* RET */
             break;
 
         case 0xC7:            /* MOV r/m16/32/64,imm16/32/32 */
