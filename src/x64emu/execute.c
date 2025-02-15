@@ -137,6 +137,7 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
 
         case 0x70 ... 0x7F:  /* Jcc rel8 */
             if (x64execute_7x_cond(emu, ins, op)) {
+                /* FIXME: Should be EIP. */
                 r_rip += ins->imm.sbyte[0];
                 log_dump("Jump taken.");
             } else {

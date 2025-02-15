@@ -46,13 +46,23 @@ static inline uint8_t decode_prefixes(x64emu_t *emu, x64instr_t *ins) {
             case 0x40 ... 0x4F:  /* REX prefix. */
                 ins->rex.byte = byte;
                 break;
-            case 0x66:           /* operand-size override prefix. */
+            case 0x2E:           /* Branch not taken. */
+            case 0x36:
+            case 0x3E:           /* Branch taken. */
+            case 0x26:
+            case 0x64:
+            case 0x65:           /* Segment override prefixes. */
+                log_err("Unimplemented segment override: %02X", byte);
+                return false;
+            case 0x66:           /* Operand-size override prefix. */
                 ins->operand_sz = true;
                 break;
-            case 0x67:           /* address-size override prefix. */
+            case 0x67:           /* Address-size override prefix. */
                 ins->address_sz = true;
                 break;
-            case 0xF0 ... 0xF3:  /* REP/LOCK prefix. */
+            case 0xF0:
+            case 0xF2:
+            case 0xF3:           /* REP/LOCK prefix. */
                 if (byte == 0xF0) {
                     log_err("Unimplemented LOCK prefix");
                     return false;
