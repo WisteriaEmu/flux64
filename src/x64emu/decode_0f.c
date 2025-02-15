@@ -28,6 +28,10 @@ bool x64decode_0f(x64emu_t *emu, x64instr_t *ins) {
                 ins->imm.dword[0] = fetch_32(emu, ins);
             break;
 
+        case 0xB6 ... 0xB7:  /* MOVZX r16/32/64,r/m8 / r16/32/64,r/m16 */
+            x64modrm_fetch(emu, ins);
+            break;
+
         default:
             log_err("Unhandled opcode 0F %02X", ins->opcode[1]);
             return false;

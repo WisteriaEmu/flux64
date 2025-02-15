@@ -79,6 +79,11 @@
     *(s_type *)dest = operand; \
 }
 
+/* `*dest = operand` */
+#define OP_UNSIGNED_MOV(s_type, u_type, operand) { \
+    *(u_type *)dest = operand; \
+}
+
 /* `*dest = operand`, RCX/ECX times if rep specified. */
 #define OP_UNSIGNED_MOV_REP(s_type, u_type, operand) { \
     u_type *tdest = (u_type *)dest; \

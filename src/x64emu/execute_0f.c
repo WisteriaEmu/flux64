@@ -7,6 +7,7 @@
 #include "x64execute.h"
 #include "x64regs_private.h"
 #include "x64execute_private.h"
+#include "x64modrm.h"
 
 SET_DEBUG_CHANNEL("X64EXECUTE_0F")
 
@@ -31,6 +32,22 @@ bool x64execute_0f(x64emu_t *emu, x64instr_t *ins) {
                 log_dump("Jump taken");
             } else log_dump("Jump not taken");
             break;
+
+        case 0xB6: {         /* MOVZX r16/32/64,r/m8 */
+            void *src  = x64modrm_get_rm(emu, ins);
+            void *dest = x64modrm_get_reg(emu, ins);
+            DEST_OPERATION(OP_UNSIGNED_MOV, (uint64_t)(*(uint8_t *)src),
+                           (uint16_t)(*(uint8_t *)src), (uint32_t)(*(uint8_t *)src))
+            break;
+        }
+
+        case 0xB7: {         /* MOVZX r16/32/64,r/m16 */
+            void *src  = x64modrm_get_rm(emu, ins);
+            void *dest = x64modrm_get_reg(emu, ins);
+            DEST_OPERATION(OP_UNSIGNED_MOV, (uint64_t)(*(uint16_t *)src),
+                           *(uint16_t *)src, (uint32_t)(*(uint16_t *)src))
+            break;
+        }
 
         default:
             log_err("Unimplemented opcode 0F %02X", op);

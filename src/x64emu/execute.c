@@ -63,7 +63,8 @@ static inline bool x64execute_C7(x64emu_t *emu, x64instr_t *ins) {
     void *dest = x64modrm_get_rm(emu, ins);
     switch (ins->modrm.reg) {
         case 0x0:            /* MOV r/m16/32/64,imm16/32/32 */
-            DEST_OPERATION(OP_SIGNED_MOV, (int64_t)ins->imm.sdword[0], ins->imm.sword[0], ins->imm.sdword[0])
+            DEST_OPERATION(OP_SIGNED_MOV, (int64_t)ins->imm.sdword[0],
+                           ins->imm.sword[0], ins->imm.sdword[0])
             break;
         default:
             log_err("Unimplemented opcode C7 extension %X", ins->modrm.reg);
@@ -109,7 +110,8 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
         case 0x63: {         /* MOVSXD r16/32/64,r/m16/32/32 */
             void *src  = x64modrm_get_rm(emu, ins);
             void *dest = x64modrm_get_reg(emu, ins);
-            DEST_OPERATION(OP_SIGNED_MOV, (int64_t)(*(int32_t *)src), *(int16_t *)src, *(int32_t *)src)
+            DEST_OPERATION(OP_SIGNED_MOV, (int64_t)(*(int32_t *)src),
+                           *(int16_t *)src, *(int32_t *)src)
             break;
         }
 
