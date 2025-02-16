@@ -144,13 +144,13 @@
 /* Perform signed operation on dest with src operand, always sign-extending.
     NOTE: src is a pointer */
 #define DEST_OPERATION_S_16(operation, src) \
-    DEST_OPERATION(operation, (int64_t)(*(int16_t *)(src)), (int16_t)(*(int16_t *)(src)), (int32_t)(*(int16_t *)(src)))
+    DEST_OPERATION(operation, (int64_t)(*(int16_t *)(src)), *(int16_t *)(src), (int32_t)(*(int16_t *)(src)))
 
 
 /* Perform unsigned operation on dest with src operand, always sign-extending.
    NOTE: src is a pointer */
 #define DEST_OPERATION_U_16(operation, src) \
-    DEST_OPERATION(operation, (uint64_t)(*(uint16_t *)(src)), (uint16_t)(*(uint16_t *)(src)), (uint32_t)(*(uint16_t *)(src)))
+    DEST_OPERATION(operation, (uint64_t)(*(uint16_t *)(src)), *(uint16_t *)(src), (uint32_t)(*(uint16_t *)(src)))
 
 
 /* Perform signed operation on dest with src operand, without extension.
@@ -175,63 +175,19 @@
     DEST_OPERATION(operation, (uint64_t)(*(uint32_t *)(src)), *(uint16_t *)(src), *(uint32_t *)(src))
 
 
-
 /* Combined macros */
 
-/* Perform signed operation using r/m as dest and reg as src, without extension. */
-#define DEST_RM_SRC_REG_OPERATION_S(operation, ext) { \
-    GET_DEST_RM_SRC_REG() \
-    DEST_OPERATION_S_ ## ext(operation, src) \
+/* Operation that uses 16, 32 or 64 bit destination size, and `ext` source operand size. */
+#define OPERATION_16_32_64(operandtype, operation, ext) { \
+    GET_ ## operandtype() \
+    DEST_OPERATION_ ## ext(operation, src) \
 }
 
-/* Perform unsigned operation using r/m as dest and reg as src, without extension. */
-#define DEST_RM_SRC_REG_OPERATION_U(operation, ext) { \
-    GET_DEST_RM_SRC_REG() \
-    DEST_OPERATION_U_ ## ext(operation, src) \
-}
-
-
-/* Perform signed operation using reg as dest and r/m as src, without extension. */
-#define DEST_REG_SRC_RM_OPERATION_S(operation, ext) { \
-    GET_DEST_REG_SRC_RM() \
-    DEST_OPERATION_S_ ## ext(operation, src) \
-}
-
-/* Perform unsigned operation using reg as dest and r/m as src, without extension. */
-#define DEST_REG_SRC_RM_OPERATION_U(operation, ext) { \
-    GET_DEST_REG_SRC_RM() \
-    DEST_OPERATION_U_ ## ext(operation, src) \
-}
-
-
-
-/* Perform signed operation using r/m as dest and reg as src, without extension, with fixed type. */
-#define DEST_RM_SRC_REG_OPERATION_S_FIXED(operation, s_type, u_type) { \
-    GET_DEST_RM_SRC_REG() \
+/* Operation that uses fixed type of destination and source operands. */
+#define OPERATION_FIXED(operandtype, operation, s_type, u_type) { \
+    GET_ ## operandtype() \
     operation(s_type, u_type, *(s_type *)(src)) \
 }
-
-/* Perform unsigned operation using r/m as dest and reg as src, without extension, with fixed type. */
-#define DEST_RM_SRC_REG_OPERATION_U_FIXED(operation, s_type, u_type) { \
-    GET_DEST_RM_SRC_REG() \
-    operation(s_type, u_type, *(u_type *)(src)) \
-}
-
-
-/* Perform signed operation using reg as dest and r/m as src, without extension, with fixed type. */
-#define DEST_REG_SRC_RM_OPERATION_S_FIXED(operation, s_type, u_type) { \
-    GET_DEST_REG_SRC_RM() \
-    operation(s_type, u_type, *(s_type *)(src)) \
-}
-
-/* Perform unsigned operation using reg as dest and r/m as src, without extension, with fixed type. */
-#define DEST_REG_SRC_RM_OPERATION_U_FIXED(operation, s_type, u_type) { \
-    GET_DEST_REG_SRC_RM() \
-    operation(s_type, u_type, *(u_type *)(src)) \
-}
-
-
-
 
 #include <stdbool.h>
 #include <stdint.h>

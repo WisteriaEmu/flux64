@@ -98,16 +98,16 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
 
 #define OPCODE_FAMILY(start, oper) \
         case start + 0x00:    /* r/m8,r8 */ \
-            DEST_RM_SRC_REG_OPERATION_S_FIXED(oper, int8_t, uint8_t) \
+            OPERATION_FIXED(DEST_RM_SRC_REG, oper, int8_t, uint8_t) \
             break; \
         case start + 0x01:    /* r/m16/32/64,r16/32/64 */ \
-            DEST_RM_SRC_REG_OPERATION_S(oper, 64) \
+            OPERATION_16_32_64(DEST_RM_SRC_REG, oper, S_64) \
             break; \
         case start + 0x02:    /* r8,r/m8 */ \
-            DEST_REG_SRC_RM_OPERATION_S_FIXED(oper, int8_t, uint8_t) \
+            OPERATION_FIXED(DEST_REG_SRC_RM, oper, int8_t, uint8_t) \
             break; \
         case start + 0x03:    /* r16/32/64,r/m16/32/64 */ \
-            DEST_REG_SRC_RM_OPERATION_S(oper, 64) \
+            OPERATION_16_32_64(DEST_REG_SRC_RM, oper, S_64) \
             break; \
         case start + 0x04: {  /* al,imm8 */ \
             void *dest = emu->regs + _rax; \
@@ -121,21 +121,13 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
         }
 
         OPCODE_FAMILY(0x00, OP_SIGNED_ADD)    /* 00..05 ADD */
-
         OPCODE_FAMILY(0x08, OP_BITWISE_OR)    /* 08..0D OR */
-
         /* ADC */
-
         /* SBB */
-
         OPCODE_FAMILY(0x20, OP_BITWISE_AND)   /* 20..25 AND */
-
         OPCODE_FAMILY(0x28, OP_SIGNED_SUB)    /* 28..2D SUB */
-
         OPCODE_FAMILY(0x30, OP_BITWISE_XOR)   /* 30..35 XOR */
-
         OPCODE_FAMILY(0x38, OP_SIGNED_CMP)    /* 38..3D CMP */
-
 #undef OPCODE_FAMILY
 
         case 0x0F:            /* Two-byte opcodes */
@@ -162,12 +154,12 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
         }
 
         case 0x63:            /* MOVSXD r16/32/64,r/m16/32/32 */
-            DEST_REG_SRC_RM_OPERATION_S(OP_SIGNED_MOV, 32)
+            OPERATION_16_32_64(DEST_REG_SRC_RM, OP_SIGNED_MOV, S_32)
             break;
 
         case 0x70 ... 0x7F:   /* Jcc rel8 */
             if (x64execute_jmp_cond(emu, ins, op)) {
-                r_eip += (int32_t)ins->imm.sbyte[0];
+                r_rip += (int64_t)ins->imm.sbyte[0];
                 log_dump("Jump taken");
             } else log_dump("Jump not taken");
             break;
@@ -188,21 +180,20 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0x84: {          /* TEST r/m8,r8 */
-            GET_DEST_RM_SRC_REG()
-            OP_BITWISE_TEST_AND(int8_t, uint8_t, *(int8_t *)src)
+            OPERATION_FIXED(DEST_RM_SRC_REG, OP_BITWISE_TEST_AND, int8_t, uint8_t)
             break;
         }
 
         case 0x85:            /* TEST r/m16/32/64,r16/32/64 */
-            DEST_RM_SRC_REG_OPERATION_S(OP_BITWISE_TEST_AND, 64)
+            OPERATION_16_32_64(DEST_RM_SRC_REG, OP_BITWISE_TEST_AND, S_64)
             break;
 
         case 0x89:            /* MOV r/m16/32/64,r16/32/64 */
-            DEST_RM_SRC_REG_OPERATION_U(OP_UNSIGNED_MOV, 64)
+            OPERATION_16_32_64(DEST_RM_SRC_REG, OP_UNSIGNED_MOV, U_64)
             break;
 
         case 0x8B:            /* MOV r16/32/64,r/m16/32/64 */
-            DEST_REG_SRC_RM_OPERATION_U(OP_UNSIGNED_MOV, 64)
+            OPERATION_16_32_64(DEST_REG_SRC_RM, OP_UNSIGNED_MOV, U_64)
             break;
 
         case 0x8D: {          /* LEA r16/32/64,m */
@@ -218,7 +209,7 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0xAB: {          /* STOS m16/32/64 */
-            uint64_t dest = (ins->address_sz) ? r_edi : r_rdi;
+            uint64_t dest = (ins->address_sz) ? (uint64_t)r_edi : r_rdi;
             DEST_OPERATION_U_64(OP_UNSIGNED_MOV_REP, emu->regs + _rax)
             break;
         }
@@ -230,14 +221,18 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
         }
 
         case 0xC2:            /* RET imm16 */
-            /* FIXME: Still uncertain about size. */
-            r_rip = pop_64(emu);
-            r_rsp += ins->imm.word[0];
+            if (ins->address_sz)
+                r_eip = pop_32(emu);
+            else
+                r_rip = pop_64(emu);
+            r_rsp += (uint64_t)ins->imm.word[0];
             break;
 
         case 0xC3:            /* RET */
-            /* FIXME: Still uncertain about size. */
-            r_rip = pop_64(emu);
+            if (ins->address_sz)
+                r_eip = pop_32(emu);
+            else
+                r_rip = pop_64(emu);
             break;
 
         case 0xC7:            /* MOV r/m16/32/64,imm16/32/32 */
@@ -256,8 +251,10 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0xE8:            /* CALL rel32 */
-            /* FIXME: Still uncertain about size. */
-            push_64(emu, r_rip);
+            if (ins->address_sz)
+                push_32(emu, r_eip);
+            else
+                push_64(emu, r_rip);
             r_rip += (int64_t)ins->imm.sdword[0];
             break;
 
