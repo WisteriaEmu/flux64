@@ -45,17 +45,28 @@
     OP_BITWISE_IMPL(|, s_type, u_type, operand)
 
 
+#define OP_SIGNED_ADD_IMPL(s_type, u_type, operand) \
+    s_type _sav = *(s_type *)dest; \
+    s_type _res = _sav + (operand); \
+    SET_RESULT_FLAGS(_res) \
+    /* CF is set in other macro */ \
+    f_AF = (uint8_t)_res < (uint8_t)_sav; \
+    f_OF = ((operand) <  0 && _sav <  0 && _res >= 0) || \
+            ((operand) >= 0 && _sav >= 0 && _res <  0);
+
+
 /* `*dest += operand`, update flags.
    CF, AF as unsigned, OF as signed.
    operand should be signed type. */
 #define OP_SIGNED_ADD(s_type, u_type, operand) { \
-    s_type _sav = *(s_type *)dest; \
-    s_type _res = _sav + (operand); \
-    SET_RESULT_FLAGS(_res) \
+    OP_SIGNED_ADD_IMPL(s_type, u_type, operand) \
     f_CF = (u_type)_res < (u_type)_sav; \
-    f_AF = (uint8_t)_res < (uint8_t)_sav; \
-    f_OF = ((operand) <  0 && _sav <  0 && _res >= 0) || \
-           ((operand) >= 0 && _sav >= 0 && _res <  0); \
+    *(s_type *)dest = _res; \
+}
+
+/* Same as add, but preserves CF. */
+#define OP_SIGNED_INC(s_type, u_type, operand) { \
+    OP_SIGNED_ADD_IMPL(s_type, u_type, operand) \
     *(s_type *)dest = _res; \
 }
 
@@ -64,7 +75,7 @@
     s_type _sav = *(s_type *)dest; \
     s_type _res = _sav - (operand); \
     SET_RESULT_FLAGS(_res) \
-    f_CF = (u_type)_res > (u_type)_sav; \
+    /* CF is set in other macro */ \
     f_AF = (uint8_t)_res > (uint8_t)_sav; \
     f_OF = ((operand) >= 0 && _sav <  0 && _res >= 0) || \
            ((operand) <  0 && _sav >= 0 && _res <  0);
@@ -73,6 +84,7 @@
 /* Same as SUB, but discarding result. */
 #define OP_SIGNED_CMP(s_type, u_type, operand) { \
     OP_SIGNED_CMP_IMPL(s_type, u_type, operand) \
+    f_CF = (u_type)_res > (u_type)_sav; \
 }
 
 
@@ -80,6 +92,13 @@
    CF, AF as unsigned, OF as signed.
    operand should be signed type. */
 #define OP_SIGNED_SUB(s_type, u_type, operand) { \
+    OP_SIGNED_CMP_IMPL(s_type, u_type, operand) \
+    f_CF = (u_type)_res > (u_type)_sav; \
+    *(s_type *)dest = _res; \
+}
+
+/* Same as sub, but preserves CF. */
+#define OP_SIGNED_DEC(s_type, u_type, operand) { \
     OP_SIGNED_CMP_IMPL(s_type, u_type, operand) \
     *(s_type *)dest = _res; \
 }
@@ -184,10 +203,17 @@
 }
 
 /* Operation that uses fixed type of destination and source operands. */
-#define OPERATION_FIXED(operandtype, operation, s_type, u_type) { \
+#define OPERATION_FIXED_S(operandtype, operation, s_type, u_type) { \
     GET_ ## operandtype() \
     operation(s_type, u_type, *(s_type *)(src)) \
 }
+
+/* Operation that uses fixed type of destination and source operands. */
+#define OPERATION_FIXED_U(operandtype, operation, s_type, u_type) { \
+    GET_ ## operandtype() \
+    operation(s_type, u_type, *(u_type *)(src)) \
+}
+
 
 #include <stdbool.h>
 #include <stdint.h>

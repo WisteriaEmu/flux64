@@ -43,26 +43,26 @@ static inline uint8_t decode_prefixes(x64emu_t *emu, x64instr_t *ins) {
     while (1) {
         uint8_t byte = fetch_8(emu, ins);
         switch (byte) {
-            case 0x40 ... 0x4F:   /* REX prefix. */
+            case 0x40 ... 0x4F:   /* REX. */
                 ins->rex.byte = byte;
                 break;
+            case 0x26:
             case 0x2E:            /* Branch not taken. */
             case 0x36:
             case 0x3E:            /* Branch taken. */
-            case 0x26:
             case 0x64:
-            case 0x65:            /* Segment override prefixes. */
+            case 0x65:            /* Segment override. */
                 log_err("Unimplemented segment override: %02X", byte);
                 return false;
-            case 0x66:            /* Operand-size override prefix. */
+            case 0x66:            /* Operand-size override. */
                 ins->operand_sz = true;
                 break;
-            case 0x67:            /* Address-size override prefix. */
+            case 0x67:            /* Address-size override. */
                 ins->address_sz = true;
                 break;
-            case 0xF0:
-            case 0xF2:
-            case 0xF3:            /* REP/LOCK prefix. */
+            case 0xF0:            /* LOCK */
+            case 0xF2:            /* REPNE/REPNZ */
+            case 0xF3:            /* REPE/REPZ */
                 if (byte == 0xF0) {
                     log_err("Unimplemented LOCK prefix");
                     return false;
@@ -75,6 +75,7 @@ static inline uint8_t decode_prefixes(x64emu_t *emu, x64instr_t *ins) {
     }
 }
 
+/* Fetch 16 or 32 bits base on 66H prefix. */
 static inline void fetch_imm_16_32_32(x64emu_t *emu, x64instr_t *ins) {
     if (ins->operand_sz)
         ins->imm.word[0]  = fetch_16(emu, ins);
@@ -82,6 +83,7 @@ static inline void fetch_imm_16_32_32(x64emu_t *emu, x64instr_t *ins) {
         ins->imm.dword[0] = fetch_32(emu, ins);
 }
 
+/* Fetch 16, 32 or 64 bits based on REX.W and 66H prefix. */
 static inline void fetch_imm_16_32_64(x64emu_t *emu, x64instr_t *ins) {
     if (ins->rex.w)
         ins->imm.qword[0] = fetch_64(emu, ins);
@@ -144,6 +146,14 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             x64modrm_fetch(emu, ins);
             break;
 
+        case 0x68:            /* PUSH imm16/32 */
+            fetch_imm_16_32_32(emu, ins);
+            break;
+
+        case 0x6A:            /* PUSH imm8 */
+            ins->imm.byte[0] = fetch_8(emu, ins);
+            break;
+
         case 0x70 ... 0x7F:   /* Jcc rel8 */
             ins->imm.byte[0] = fetch_8(emu, ins);
             break;
@@ -163,18 +173,14 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             ins->imm.byte[0] = fetch_8(emu, ins);
             break;
 
-        case 0x84:            /* TEST r/m8,r8 */
-            x64modrm_fetch(emu, ins);
-            break;
-
+        case 0x84:            /* TEST r/m8,r8 */\
         case 0x85:            /* TEST r/m16/32/64,r16/32/64 */
             x64modrm_fetch(emu, ins);
             break;
 
+        case 0x88:            /* MOV r/m8,r8 */
         case 0x89:            /* MOV r/m16/32/64,r16/32/64 */
-            x64modrm_fetch(emu, ins);
-            break;
-
+        case 0x8A:            /* MOV r8,r/m8 */
         case 0x8B:            /* MOV r16/32/64,r/m16/32/64 */
             x64modrm_fetch(emu, ins);
             break;
@@ -183,9 +189,14 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             x64modrm_fetch(emu, ins);
             break;
 
+        case 0x8F:            /* POP r/m16/64 */
+            x64modrm_fetch(emu, ins);
+            break;
+
         case 0x90:            /* NOP/PAUSE */
             break;
 
+        case 0xAA:            /* STOS m8 */
         case 0xAB:            /* STOS m16/32/64 */
             break;
 
@@ -211,6 +222,19 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
         case 0xE8:            /* CALL rel32 */
             /* rel32 is immediate data */
             ins->imm.dword[0] = fetch_32(emu, ins);
+            break;
+
+        case 0xE9:            /* JMP rel32 */
+            ins->imm.dword[0] = fetch_32(emu, ins);
+            break;
+
+        case 0xEB:            /* JMP rel8 */
+            ins->imm.byte[0] = fetch_8(emu, ins);
+            break;
+
+        case 0xFE:            /* INC/DEC r/m8 */
+        case 0xFF:            /* INC/DEC/CALL/CALLF/JMP/JMPF/PUSH r/m */
+            x64modrm_fetch(emu, ins);
             break;
 
         default:

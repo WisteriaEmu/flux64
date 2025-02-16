@@ -75,6 +75,22 @@ static inline bool x64execute_83(x64emu_t *emu, x64instr_t *ins) {
 
 /* ugly macros end. */
 
+static inline bool x64execute_8F(x64emu_t *emu, x64instr_t *ins) {
+    void *dest = x64modrm_get_rm(emu, ins);
+    switch (ins->modrm.reg) {
+        case 0x0:            /* POP r/m16/64 */
+            if (ins->operand_sz)
+                *(uint16_t *)dest = pop_16(emu);
+            else
+                *(uint64_t *)dest = pop_64(emu);
+            break;
+        default:
+            log_err("Unimplemented opcode 8F extension %X", ins->modrm.reg);
+            return false;
+    }
+    return true;
+}
+
 static inline bool x64execute_C7(x64emu_t *emu, x64instr_t *ins) {
     void *dest = x64modrm_get_rm(emu, ins);
     switch (ins->modrm.reg) {
@@ -83,6 +99,52 @@ static inline bool x64execute_C7(x64emu_t *emu, x64instr_t *ins) {
             break;
         default:
             log_err("Unimplemented opcode C7 extension %X", ins->modrm.reg);
+            return false;
+    }
+    return true;
+}
+
+static inline bool x64execute_FE(x64emu_t *emu, x64instr_t *ins) {
+    void *dest = x64modrm_get_rm(emu, ins);
+    switch (ins->modrm.reg) {
+        case 0x0:             /* INC r/m8 */
+            OP_SIGNED_INC(int8_t, uint8_t, 1)
+            break;
+        case 0x1:             /* DEC r/m8 */
+            OP_SIGNED_DEC(int8_t, uint8_t, 1)
+            break;
+        default:
+            log_err("Unimplemented opcode FE extension %X", ins->modrm.reg);
+            return false;
+    }
+    return true;
+}
+
+static inline bool x64execute_FF(x64emu_t *emu, x64instr_t *ins) {
+    void *dest = x64modrm_get_rm(emu, ins);
+    switch (ins->modrm.reg) {
+        case 0x0: {           /* INC r/m16/32/64 */
+            int8_t dummy = 1;
+            DEST_OPERATION_S_8(OP_SIGNED_INC, &dummy)
+            break;
+        }
+        case 0x1: {           /* DEC r/m16/32/64 */
+            int8_t dummy = 1;
+            DEST_OPERATION_S_8(OP_SIGNED_DEC, &dummy)
+            break;
+        }
+        case 0x2:             /* CALL r/m64 */
+            if (ins->address_sz)
+                push_32(emu, r_eip);
+            else
+                push_64(emu, r_rip);
+            r_rip = *(uint64_t *)dest;
+            break;
+        case 0x4:             /* JMP r/m64 */
+            r_rip = *(uint64_t *)dest;
+            break;
+        default:
+            log_err("Unimplemented opcode FF extension %X", ins->modrm.reg);
             return false;
     }
     return true;
@@ -98,13 +160,13 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
 
 #define OPCODE_FAMILY(start, oper) \
         case start + 0x00:    /* r/m8,r8 */ \
-            OPERATION_FIXED(DEST_RM_SRC_REG, oper, int8_t, uint8_t) \
+            OPERATION_FIXED_S(DEST_RM_SRC_REG, oper, int8_t, uint8_t) \
             break; \
         case start + 0x01:    /* r/m16/32/64,r16/32/64 */ \
             OPERATION_16_32_64(DEST_RM_SRC_REG, oper, S_64) \
             break; \
         case start + 0x02:    /* r8,r/m8 */ \
-            OPERATION_FIXED(DEST_REG_SRC_RM, oper, int8_t, uint8_t) \
+            OPERATION_FIXED_S(DEST_REG_SRC_RM, oper, int8_t, uint8_t) \
             break; \
         case start + 0x03:    /* r16/32/64,r/m16/32/64 */ \
             OPERATION_16_32_64(DEST_REG_SRC_RM, oper, S_64) \
@@ -157,6 +219,20 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             OPERATION_16_32_64(DEST_REG_SRC_RM, OP_SIGNED_MOV, S_32)
             break;
 
+        case 0x68:            /* PUSH imm16/32 */
+            if (ins->operand_sz)
+                push_16(emu, ins->imm.sword[0]);
+            else
+                push_64(emu, (int64_t)ins->imm.sdword[0]);
+            break;
+
+        case 0x6A:            /* PUSH imm8 */
+            if (ins->operand_sz)
+                push_16(emu, (int16_t)ins->imm.sbyte[0]);
+            else
+                push_64(emu, (int64_t)ins->imm.sbyte[0]);
+            break;
+
         case 0x70 ... 0x7F:   /* Jcc rel8 */
             if (x64execute_jmp_cond(emu, ins, op)) {
                 r_rip += (int64_t)ins->imm.sbyte[0];
@@ -180,7 +256,7 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0x84: {          /* TEST r/m8,r8 */
-            OPERATION_FIXED(DEST_RM_SRC_REG, OP_BITWISE_TEST_AND, int8_t, uint8_t)
+            OPERATION_FIXED_S(DEST_RM_SRC_REG, OP_BITWISE_TEST_AND, int8_t, uint8_t)
             break;
         }
 
@@ -188,8 +264,16 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             OPERATION_16_32_64(DEST_RM_SRC_REG, OP_BITWISE_TEST_AND, S_64)
             break;
 
+        case 0x88:            /* MOV r/m8,r8 */
+            OPERATION_FIXED_U(DEST_RM_SRC_REG, OP_UNSIGNED_MOV, int8_t, uint8_t)
+            break;
+
         case 0x89:            /* MOV r/m16/32/64,r16/32/64 */
             OPERATION_16_32_64(DEST_RM_SRC_REG, OP_UNSIGNED_MOV, U_64)
+            break;
+
+        case 0x8A:            /* MOV r8,r/m8 */
+            OPERATION_FIXED_U(DEST_REG_SRC_RM, OP_UNSIGNED_MOV, int8_t, uint8_t)
             break;
 
         case 0x8B:            /* MOV r16/32/64,r/m16/32/64 */
@@ -205,8 +289,19 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             break;
         }
 
+        case 0x8F:            /* POP r/m16/64 */
+            if (!x64execute_8F(emu, ins))
+                return false;
+            break;
+
         case 0x90:            /* NOP/PAUSE */
             break;
+
+        case 0xAA: {          /* STOS m8 */
+            uint64_t dest = (ins->address_sz) ? (uint64_t)r_edi : r_rdi;
+            OP_UNSIGNED_MOV_REP(int8_t, uint8_t, r_al)
+            break;
+        }
 
         case 0xAB: {          /* STOS m16/32/64 */
             uint64_t dest = (ins->address_sz) ? (uint64_t)r_edi : r_rdi;
@@ -256,6 +351,24 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             else
                 push_64(emu, r_rip);
             r_rip += (int64_t)ins->imm.sdword[0];
+            break;
+
+        case 0xE9:            /* JMP rel32 */
+            r_rip += (int64_t)ins->imm.sdword[0];
+            break;
+
+        case 0xEB:            /* JMP rel8 */
+            r_rip += (int64_t)ins->imm.sbyte[0];
+            break;
+
+        case 0xFE:            /* INC/DEC r/m8 */
+            if (!x64execute_FE(emu, ins))
+                return false;
+            break;
+
+        case 0xFF:            /* INC/DEC/CALL/CALLF/JMP/JMPF/PUSH r/m */
+            if (!x64execute_FF(emu, ins))
+                return false;
             break;
 
         default:
