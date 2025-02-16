@@ -214,6 +214,22 @@
     operation(s_type, u_type, *(u_type *)(src)) \
 }
 
+/* Operations modifying both src and dest.
+   Cannot be used with previous macros,
+   src operand is a pointer. */
+
+#define PP_XCHG(s_type, u_type, src) { \
+    u_type _sav = *(u_type *)(dest); \
+    *(u_type *)(dest) = *(u_type *)(src); \
+    *(u_type *)(src) = _sav; \
+}
+
+/* Operation that modifies both operands,
+   src is a pointer now. */
+#define PP_OPERATION(operation, src) \
+    if      (ins->rex.w)      operation(int64_t, uint64_t, src) \
+    else if (ins->operand_sz) operation(int16_t, uint16_t, src) \
+    else                      operation(int32_t, uint32_t, src)
 
 #include <stdbool.h>
 #include <stdint.h>

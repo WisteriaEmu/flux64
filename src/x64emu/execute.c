@@ -264,6 +264,18 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             OPERATION_16_32_64(DEST_RM_SRC_REG, OP_BITWISE_TEST_AND, S_64)
             break;
 
+        case 0x86: {          /* XCHG r8,r/m8 */
+            GET_DEST_REG_SRC_RM()
+            PP_XCHG(int8_t, uint8_t, src)
+            break;
+        }
+
+        case 0x87: {          /* XCHG r16/32/64,r/m16/32/64 */
+            GET_DEST_REG_SRC_RM()
+            PP_OPERATION(PP_XCHG, src)
+            break;
+        }
+
         case 0x88:            /* MOV r/m8,r8 */
             OPERATION_FIXED_U(DEST_RM_SRC_REG, OP_UNSIGNED_MOV, int8_t, uint8_t)
             break;
@@ -294,8 +306,11 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
                 return false;
             break;
 
-        case 0x90:            /* NOP/PAUSE */
+        case 0x90 ... 0x97: { /* XCHG+r16/32/64 rAX */
+            void *dest = emu->regs + ((op & 7) | (ins->rex.b << 3));
+            PP_OPERATION(PP_XCHG, emu->regs + _rax)
             break;
+        }
 
         case 0xAA: {          /* STOS m8 */
             uint64_t dest = (ins->address_sz) ? (uint64_t)r_edi : r_rdi;

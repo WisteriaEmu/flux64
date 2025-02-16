@@ -117,21 +117,13 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         OPCODE_FAMILY(0x00)   /* 00..05 ADD */
-
         OPCODE_FAMILY(0x08)   /* 08..0D OR */
-
         /* ADC */
-
         /* SBB */
-
         OPCODE_FAMILY(0x20)   /* 20..25 AND */
-
         OPCODE_FAMILY(0x28)   /* 28..2D SUB */
-
         OPCODE_FAMILY(0x30)   /* 30..35 XOR */
-
         OPCODE_FAMILY(0x38)   /* 38..3D CMP */
-
 #undef OPCODE_FAMILY
 
         case 0x0F:            /* Two-byte opcodes */
@@ -173,8 +165,10 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             ins->imm.byte[0] = fetch_8(emu, ins);
             break;
 
-        case 0x84:            /* TEST r/m8,r8 */\
+        case 0x84:            /* TEST r/m8,r8 */
         case 0x85:            /* TEST r/m16/32/64,r16/32/64 */
+        case 0x86:            /* XCHG r8,r/m8 */
+        case 0x87:            /* XCHG r16/32/64,r/m16/32/64 */
             x64modrm_fetch(emu, ins);
             break;
 
@@ -193,7 +187,7 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             x64modrm_fetch(emu, ins);
             break;
 
-        case 0x90:            /* NOP/PAUSE */
+        case 0x90 ... 0x97:   /* XCHG+r16/32/64 rAX */
             break;
 
         case 0xAA:            /* STOS m8 */
