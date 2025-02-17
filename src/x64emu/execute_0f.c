@@ -24,10 +24,8 @@ bool x64execute_0f(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0x80 ... 0x8F:   /* Jcc rel16/32 */
-            if (x64execute_jmp_cond(emu, ins, op)) {
+            if (x64execute_jmp_cond(emu, ins, op))
                 r_rip += (ins->operand_sz) ? (int64_t)ins->imm.sword[0] : (int64_t)ins->imm.sdword[0];
-                log_dump("Jump taken");
-            } else log_dump("Jump not taken");
             break;
 
         case 0xB6:            /* MOVZX r16/32/64,r/m8 */

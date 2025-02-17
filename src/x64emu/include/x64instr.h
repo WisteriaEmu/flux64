@@ -57,7 +57,8 @@ typedef union {
  * Instruction debugging description.
  */
 typedef struct {
-    char            str[48];        /* Instruction bytes as a string. */
+    uint8_t bytes[15];        /* Instruction fetched bytes. */
+    uint8_t bytes_len;
 } x64instr_desc_t;
 
 /**
@@ -92,7 +93,5 @@ uint8_t  fetch_8(x64emu_t *emu, x64instr_t *ins);
 uint16_t fetch_16(x64emu_t *emu, x64instr_t *ins);
 uint32_t fetch_32(x64emu_t *emu, x64instr_t *ins);
 uint64_t fetch_64(x64emu_t *emu, x64instr_t *ins);
-
-#define OPCODE_APPEND(fmt, ...) sprintf(ins->desc.str + strlen(ins->desc.str), fmt, ## __VA_ARGS__);
 
 #endif /* __X64INSTR_H_ */

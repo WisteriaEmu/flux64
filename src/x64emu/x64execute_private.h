@@ -154,7 +154,7 @@
     DEST_OPERATION(operation, (int64_t)(*(int8_t *)(src)), (int16_t)(*(int8_t *)(src)), (int32_t)(*(int8_t *)(src)))
 
 
-/* Perform unsigned operation on dest with src operand, always sign-extending.
+/* Perform unsigned operation on dest with src operand, always zero-extending.
    NOTE: src is a pointer */
 #define DEST_OPERATION_U_8(operation, src) \
     DEST_OPERATION(operation, (uint64_t)(*(uint8_t *)(src)), (uint16_t)(*(uint8_t *)(src)), (uint32_t)(*(uint8_t *)(src)))
@@ -166,7 +166,7 @@
     DEST_OPERATION(operation, (int64_t)(*(int16_t *)(src)), *(int16_t *)(src), (int32_t)(*(int16_t *)(src)))
 
 
-/* Perform unsigned operation on dest with src operand, always sign-extending.
+/* Perform unsigned operation on dest with src operand, always zero-extending.
    NOTE: src is a pointer */
 #define DEST_OPERATION_U_16(operation, src) \
     DEST_OPERATION(operation, (uint64_t)(*(uint16_t *)(src)), *(uint16_t *)(src), (uint32_t)(*(uint16_t *)(src)))

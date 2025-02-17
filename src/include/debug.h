@@ -22,6 +22,6 @@
     fprintf(stdout, "[FIXME][%s]: " msg "\n", _default_debug_channel, ##__VA_ARGS__)
 
 #define log_dump(msg, ...) \
-    fprintf(stderr, "[DUMP][%s]: " msg "\n", _default_debug_channel, ##__VA_ARGS__)
+    fprintf(stdout, "[DUMP][%s]: " msg "\n", _default_debug_channel, ##__VA_ARGS__)
 
 #endif /* __DEBUG_H_ */

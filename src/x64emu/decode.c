@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include <stdbool.h>
-#include <string.h>
 
 #include "debug.h"
 #include "x64instr.h"
@@ -13,25 +12,29 @@ SET_DEBUG_CHANNEL("X64DECODE")
 
 uint8_t fetch_8(x64emu_t *emu, x64instr_t *ins) {
     uint8_t v = *(uint8_t  *)(r_rip++);
-    OPCODE_APPEND("%02x ", v)
+    *(uint8_t *)(ins->desc.bytes + ins->desc.bytes_len) = v;
+    ins->desc.bytes_len += 1;
     return v;
 }
 
 uint16_t fetch_16(x64emu_t *emu, x64instr_t *ins) {
     uint16_t v = *(uint16_t *)(r_rip += 2, r_rip - 2);
-    OPCODE_APPEND("%04x ", v)
+    *(uint16_t *)(ins->desc.bytes + ins->desc.bytes_len) = v;
+    ins->desc.bytes_len += 2;
     return v;
 }
 
 uint32_t fetch_32(x64emu_t *emu, x64instr_t *ins) {
     uint32_t v = *(uint32_t *)(r_rip += 4, r_rip - 4);
-    OPCODE_APPEND("%08x ", v)
+    *(uint32_t *)(ins->desc.bytes + ins->desc.bytes_len) = v;
+    ins->desc.bytes_len += 4;
     return v;
 }
 
 uint64_t fetch_64(x64emu_t *emu, x64instr_t *ins) {
     uint64_t v = *(uint64_t *)(r_rip += 8, r_rip - 8);
-    OPCODE_APPEND("%016lx ", v)
+    *(uint64_t *)(ins->desc.bytes + ins->desc.bytes_len) = v;
+    ins->desc.bytes_len += 8;
     return v;
 }
 

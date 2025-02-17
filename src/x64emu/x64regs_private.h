@@ -5,8 +5,7 @@ enum {
     _rax, _rcx, _rdx, _rbx,
     _rsp, _rbp, _rsi, _rdi,
     _r8,  _r9,  _r10, _r11,
-    _r12, _r13, _r14, _r15,
-    _rip
+    _r12, _r13, _r14, _r15
 };
 
 /* macros used to directly access registers internally. */

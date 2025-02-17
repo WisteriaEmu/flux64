@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "x64emu.h"
 #include "x64instr.h"
@@ -30,21 +31,53 @@ bool x64emu_init(x64emu_t *emu, x64context_t *ctx) {
     return true;
 }
 
+static inline void print_emu_state(x64emu_t *emu, x64instr_t *ins, uint64_t rip) {
+    static x64emu_t emu_saved = { 0 };
+
+    char changes[256] = { 0 };
+    char *target = changes;
+
+    if (emu->flags.raw != emu_saved.flags.raw) {
+        target += sprintf(target, "rflags: [ ");
+#define ADD_FLAG(flag) if (f_ ## flag) target += sprintf(target, "%s ", #flag);
+        ADD_FLAG(CF)   ADD_FLAG(PF)   ADD_FLAG(AF)   ADD_FLAG(ZF)
+        ADD_FLAG(SF)   ADD_FLAG(TF)   ADD_FLAG(IF)   ADD_FLAG(DF)
+        ADD_FLAG(OF)   ADD_FLAG(IOPL) ADD_FLAG(NT)   ADD_FLAG(RF)
+        ADD_FLAG(VM)   ADD_FLAG(AC)   ADD_FLAG(VIF)  ADD_FLAG(VIP)
+        ADD_FLAG(ID)
+#undef ADD_FLAG
+        target += sprintf(target, "]   ");
+        emu_saved.flags.raw = emu->flags.raw;
+    }
+
+#define ADD_REG(reg) \
+    if (r_ ## reg != emu_saved.regs[_ ## reg].qword[0]) { \
+        target += sprintf(target, "%s: %lx   ", #reg, r_ ## reg); \
+        emu_saved.regs[_ ## reg].qword[0] = r_ ## reg; \
+    }
+    ADD_REG(rax) ADD_REG(rcx) ADD_REG(rdx) ADD_REG(rbx)
+    ADD_REG(rsp) ADD_REG(rbp) ADD_REG(rsi) ADD_REG(rdi)
+    ADD_REG(r8)  ADD_REG(r9)  ADD_REG(r10) ADD_REG(r11)
+    ADD_REG(r12) ADD_REG(r13) ADD_REG(r14) ADD_REG(r15)
+#undef ADD_REG
+
+    char instr_str[48] = { 0 };
+    for (uint8_t i = 0; i < ins->desc.bytes_len; i++) {
+        sprintf(instr_str + i * 3, "%02X ", ins->desc.bytes[i]);
+    }
+
+    log_dump("%lx: %-32s %s", rip, instr_str, changes);
+}
+
 void x64emu_run(x64emu_t *emu) {
     while (1) {
         x64instr_t instr = { 0 };
-        uint64_t saved_rip = r_rip;
+        uint64_t start_rip = r_rip;
 
         if (!x64decode(emu, &instr))
             return;
 
-        log_dump("%lx: %-48s C/P/A/Z/S/OF: %x%x%x%x%x%x "
-                 "rax/cx/dx/bx: %lx %lx %lx %lx "
-                 "rsp/bp/si/di: %lx %lx %lx %lx",
-                 saved_rip, instr.desc.str,
-                 f_CF, f_PF, f_AF, f_ZF, f_SF, f_OF,
-                 r_rax, r_rcx, r_rdx, r_rbx,
-                 r_rsp, r_rbp, r_rsi, r_rdi);
+        print_emu_state(emu, &instr, start_rip);
 
         if (!x64execute(emu, &instr))
             return;
