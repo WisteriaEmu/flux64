@@ -2,11 +2,19 @@
 #ifndef __EXECUTE_PRIVATE_H_
 #define __EXECUTE_PRIVATE_H_
 
+/* 1 when byte has even number of set bits. */
+static inline uint8_t get_byte_parity(uint8_t x) {
+    x ^= x >> 4;
+    x ^= x >> 2;
+    x ^= x >> 1;
+    return (~x) & 1;
+}
+
 /* Set SF, ZF, PF. */
 #define SET_RESULT_FLAGS(x) \
     f_SF = (x) < 0; \
     f_ZF = (x) == 0; \
-    f_PF = !__builtin_parity((uint8_t)(x));
+    f_PF = get_byte_parity(x);
 
 
 /* Perform bitwise operation and update flags. */

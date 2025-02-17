@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <string.h>
 #include <sys/mman.h>
@@ -48,7 +49,7 @@ void push_align(x64emu_t *emu) {
 void push_string(x64emu_t *emu, const char *str) {
     int size = strlen(str) + 1; // NULL-terminated size
     r_rsp -= size;
-    memcpy((void*)r_rsp, str, size);
+    memcpy((void *)r_rsp, str, size);
 }
 
 uint16_t pop_16(x64emu_t *emu) {
@@ -92,7 +93,8 @@ bool x64stack_init(x64context_t *ctx) {
 
     ctx->stack.align = 16;
 
-    log_dump("Mapped initial stack at 0x%lx, with alignment 0x%lx", (uintptr_t)ctx->stack.base, ctx->stack.align);
+    log_dump("Mapped initial stack at 0x%lx-0x%lx, with alignment 0x%lx",
+             (uintptr_t)ctx->stack.base, (uintptr_t)ctx->stack.base + ctx->stack.size, ctx->stack.align);
 
     return true;
 }
@@ -128,6 +130,11 @@ void x64stack_setup(x64emu_t *emu) {
 
     push_string(emu, "x86_64");
     uintptr_t platform_string = r_rsp;
+
+    /* 16 random bytes */
+    for (int i = 0; i < 4; i++)
+        push_32(emu, (uint32_t)random());
+    uintptr_t random_16 = r_rsp;
 
     push_align(emu);
 
@@ -167,7 +174,7 @@ void x64stack_setup(x64emu_t *emu) {
 
     push_real_auxv(emu, AT_SECURE);
 
-    push_real_auxv(emu, AT_RANDOM);
+    push_auxv(emu, random_16, AT_RANDOM);
 
 
 

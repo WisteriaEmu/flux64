@@ -32,34 +32,27 @@ void x64modrm_fetch(x64emu_t *emu, x64instr_t *ins) {
     }
 }
 
-/* https://wiki.osdev.org/X86-64_Instruction_Encoding#32/64-bit_addressing_2 */
-
-/** Index register value or 0 for X.Index 0.100. */
-static inline uint64_t sib_get_index(x64emu_t *emu, x64instr_t *ins) {
-    return (!ins->rex.x && ins->sib.index == 4) ? 0 :
-            r_reg64(ins->sib.index | (ins->rex.x << 3));
+void *x64modrm_get_reg(x64emu_t *emu, x64instr_t *ins) {
+    return emu->regs + (ins->modrm.reg | (ins->rex.r << 3));
 }
 
-/** Base register value. */
+/* https://wiki.osdev.org/X86-64_Instruction_Encoding#32/64-bit_addressing_2 */
+
+static inline uint64_t sib_get_scaled_index(x64emu_t *emu, x64instr_t *ins) {
+    return (!ins->rex.x && ins->sib.index == 4) ? 0 :
+            (r_reg64(ins->sib.index | (ins->rex.x << 3)) << ins->sib.scale);
+}
+
 static inline uint64_t sib_get_base(x64emu_t *emu, x64instr_t *ins) {
     return r_reg64(ins->sib.base | (ins->rex.b << 3));
 }
 
-/** The SIB address (mod 00). */
 static inline uint64_t sib_get_00(x64emu_t *emu, x64instr_t *ins) {
-    return (sib_get_index(emu, ins) << ins->sib.scale) +
-           ((ins->sib.base == 5) ? ins->displ.sdword[0] :
-            sib_get_base(emu, ins));
+    return sib_get_scaled_index(emu, ins) + ((ins->sib.base == 5) ? ins->displ.sdword[0] : sib_get_base(emu, ins));
 }
 
-/** The SIB address (mod 01 or 10). */
-static inline uint64_t sib_get_01(x64emu_t *emu, x64instr_t *ins) {
-    /* displacement is added later. */
-    return (sib_get_index(emu, ins) << ins->sib.scale) + sib_get_base(emu, ins);
-}
-
-void *x64modrm_get_reg(x64emu_t *emu, x64instr_t *ins) {
-    return emu->regs + (ins->modrm.reg | (ins->rex.r << 3));
+static inline uint64_t sib_get_01_10(x64emu_t *emu, x64instr_t *ins) {
+    return sib_get_scaled_index(emu, ins) + sib_get_base(emu, ins);
 }
 
 static inline uint64_t get_raw_rm(x64emu_t *emu, x64instr_t *ins) {
@@ -84,11 +77,11 @@ void *x64modrm_get_rm(x64emu_t *emu, x64instr_t *ins) {
                 return (void *)get_raw_rm(emu, ins);
 
         case 0x1:     /* 01 */                /* [(r/m or SIB) + disp8] */
-            return (void *)(((ins->modrm.rm == 4) ? sib_get_01(emu, ins) :
+            return (void *)(((ins->modrm.rm == 4) ? sib_get_01_10(emu, ins) :
                     get_raw_rm(emu, ins)) + ins->displ.sbyte[0]);
 
         case 0x2:     /* 10 */                /* [(r/m or SIB) + disp32] */
-            return (void *)(((ins->modrm.rm == 4) ? sib_get_01(emu, ins) :
+            return (void *)(((ins->modrm.rm == 4) ? sib_get_01_10(emu, ins) :
                     get_raw_rm(emu, ins)) + ins->displ.sdword[0]);
 
         case 0x3:     /* 11 */                /* r/m */

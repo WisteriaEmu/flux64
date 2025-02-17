@@ -37,6 +37,17 @@ static inline void print_emu_state(x64emu_t *emu, x64instr_t *ins, uint64_t rip)
     char changes[256] = { 0 };
     char *target = changes;
 
+#define ADD_REG(reg) \
+    if (r_ ## reg != emu_saved.regs[_ ## reg].qword[0]) { \
+        target += sprintf(target, "%s: 0x%016lx   ", #reg, r_ ## reg); \
+        emu_saved.regs[_ ## reg].qword[0] = r_ ## reg; \
+    }
+    ADD_REG(rax) ADD_REG(rcx) ADD_REG(rdx) ADD_REG(rbx)
+    ADD_REG(rsp) ADD_REG(rbp) ADD_REG(rsi) ADD_REG(rdi)
+    ADD_REG(r8)  ADD_REG(r9)  ADD_REG(r10) ADD_REG(r11)
+    ADD_REG(r12) ADD_REG(r13) ADD_REG(r14) ADD_REG(r15)
+#undef ADD_REG
+
     if (emu->flags.raw != emu_saved.flags.raw) {
         target += sprintf(target, "rflags: [ ");
 #define ADD_FLAG(flag) if (f_ ## flag) target += sprintf(target, "%s ", #flag);
@@ -49,17 +60,6 @@ static inline void print_emu_state(x64emu_t *emu, x64instr_t *ins, uint64_t rip)
         target += sprintf(target, "]   ");
         emu_saved.flags.raw = emu->flags.raw;
     }
-
-#define ADD_REG(reg) \
-    if (r_ ## reg != emu_saved.regs[_ ## reg].qword[0]) { \
-        target += sprintf(target, "%s: %lx   ", #reg, r_ ## reg); \
-        emu_saved.regs[_ ## reg].qword[0] = r_ ## reg; \
-    }
-    ADD_REG(rax) ADD_REG(rcx) ADD_REG(rdx) ADD_REG(rbx)
-    ADD_REG(rsp) ADD_REG(rbp) ADD_REG(rsi) ADD_REG(rdi)
-    ADD_REG(r8)  ADD_REG(r9)  ADD_REG(r10) ADD_REG(r11)
-    ADD_REG(r12) ADD_REG(r13) ADD_REG(r14) ADD_REG(r15)
-#undef ADD_REG
 
     char instr_str[48] = { 0 };
     for (uint8_t i = 0; i < ins->desc.bytes_len; i++) {
