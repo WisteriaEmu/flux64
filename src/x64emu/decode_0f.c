@@ -21,6 +21,10 @@ bool x64decode_0f(x64emu_t *emu, x64instr_t *ins) {
             x64modrm_fetch(emu, ins);
             break;
 
+        case 0x40 ... 0x4F:   /* CMOVcc r16/32/64,r/m16/32/64 */
+            x64modrm_fetch(emu, ins);
+            break;
+
         case 0x80 ... 0x8F:   /* Jcc rel16/32 */
             if (ins->operand_sz)
                 ins->imm.word[0] = fetch_16(emu, ins);

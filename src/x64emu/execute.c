@@ -310,6 +310,53 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             break;
         }
 
+        case 0x98: {          /* CBW/CWDE/CDQE */
+            void *dest = emu->regs + _rax;
+            DEST_OPERATION(OP_SIGNED_MOV, (int64_t)s_eax, (int16_t)s_al, (int32_t)s_ax)
+            break;
+        }
+
+        case 0x99: {          /* CWD/CDQ/CQO */
+            /* uncertain about dest. */
+            void *dest = emu->regs + _rdx;
+            DEST_OPERATION(OP_SIGNED_MOV, (int64_t)s_eax, (int16_t)s_al, (int32_t)s_ax)
+            break;
+        }
+
+        case 0x9C:            /* PUSHF/PUSHFQ */
+            if (ins->operand_sz)
+                push_16(emu, (uint16_t)r_flags);
+            else
+                push_64(emu, r_flags & 0xFCFFFF);
+            break;
+
+        case 0x9D:            /* POPF/POPFQ */
+            /* FIXME: Privilege levels. (currently always 0) */
+            if (ins->operand_sz)
+                //    00111111111010101  to be updated from the stack
+                //        7   F   D   5
+                // ..101000000000101010  to be preserved
+                //    E   8   0   2   A
+                r_eflags = (r_eflags & 0xfffe802a) | ((uint32_t)pop_16(emu) & 0x7fd5);
+            else
+                //     1001000111111111010101  to be updated from the stack
+                //      2   4   7   F   D   5
+                // ..110110101000000000101010  to be preserved
+                //      D   A   8   0   2   A
+                r_eflags = (r_eflags & 0xffda802a) | ((uint32_t)pop_64(emu) & 0x247fd5);
+            break;
+
+        case 0x9E:            /* SAHF */
+            // 11010101 to be updated
+            /* FIXME: May be an invalid instruction. */
+            r_eflags = (r_eflags & (~0xD5)) | (r_ah & 0xD5);
+            break;
+
+        case 0x9F:            /* LAHF */
+            /* FIXME: May be an invalid instruction. */
+            r_ah = ((uint8_t)r_eflags & 0xD5) | 2;
+            break;
+
         case 0xAA: {          /* STOS m8 */
             uint64_t dest = (ins->address_sz) ? (uint64_t)r_edi : r_rdi;
             OP_UNSIGNED_MOV_REP(int8_t, uint8_t, r_al)
@@ -319,6 +366,12 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
         case 0xAB: {          /* STOS m16/32/64 */
             uint64_t dest = (ins->address_sz) ? (uint64_t)r_edi : r_rdi;
             DEST_OPERATION_U_64(OP_UNSIGNED_MOV_REP, emu->regs + _rax)
+            break;
+        }
+
+        case 0xB0 ... 0xB7: { /* MOV+r8 imm8 */
+            void *dest = emu->regs + ((op & 7) | (ins->rex.b << 3));
+            OP_UNSIGNED_MOV(int8_t, uint8_t, ins->imm.byte[0]);
             break;
         }
 

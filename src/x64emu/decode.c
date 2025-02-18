@@ -53,10 +53,11 @@ static inline uint8_t decode_prefixes(x64emu_t *emu, x64instr_t *ins) {
             case 0x2E:            /* Branch not taken. */
             case 0x36:
             case 0x3E:            /* Branch taken. */
+                break;
             case 0x64:
             case 0x65:            /* Segment override. */
                 log_err("Unimplemented segment override: %02X", byte);
-                return false;
+                break;
             case 0x66:            /* Operand-size override. */
                 ins->operand_sz = true;
                 break;
@@ -172,9 +173,6 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
         case 0x85:            /* TEST r/m16/32/64,r16/32/64 */
         case 0x86:            /* XCHG r8,r/m8 */
         case 0x87:            /* XCHG r16/32/64,r/m16/32/64 */
-            x64modrm_fetch(emu, ins);
-            break;
-
         case 0x88:            /* MOV r/m8,r8 */
         case 0x89:            /* MOV r/m16/32/64,r16/32/64 */
         case 0x8A:            /* MOV r8,r/m8 */
@@ -191,10 +189,20 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0x90 ... 0x97:   /* XCHG+r16/32/64 rAX */
+        case 0x98:            /* CBW/CWDE/CDQE */
+        case 0x99:            /* CWD/CDQ/CQO */
+        case 0x9C:            /* PUSGF/PUSGFQ */
+        case 0x9D:            /* POPF/POPFQ */
+        case 0x9E:            /* SAHF */
+        case 0x9F:            /* LAHF */
             break;
 
         case 0xAA:            /* STOS m8 */
         case 0xAB:            /* STOS m16/32/64 */
+            break;
+
+        case 0xB0 ... 0xB7:   /* MOV+r8 imm8 */
+            ins->imm.byte[0] = fetch_8(emu, ins);
             break;
 
         case 0xB8 ... 0xBF:   /* MOV+r16/32/64 imm16/32/64 */
@@ -217,11 +225,8 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0xE8:            /* CALL rel32 */
-            /* rel32 is immediate data */
-            ins->imm.dword[0] = fetch_32(emu, ins);
-            break;
-
         case 0xE9:            /* JMP rel32 */
+            /* rel32 is immediate data */
             ins->imm.dword[0] = fetch_32(emu, ins);
             break;
 

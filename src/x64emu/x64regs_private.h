@@ -57,7 +57,8 @@ enum {
 
 #define r_eip  emu->rip.dword[0]
 
-#define r_flags emu->flags.raw
+#define r_flags emu->flags.qword[0]
+#define r_eflags emu->flags.dword[0]
 
 /* bytes 0-1 */
 #define r_ax   emu->regs[_rax].word[0]
@@ -97,6 +98,15 @@ enum {
 #define r_r14b emu->regs[_r14].byte[0]
 #define r_r15b emu->regs[_r15].byte[0]
 
+/* byte 1 */
+#define r_ah   emu->regs[_rax].byte[1]
+#define r_ch   emu->regs[_rcx].byte[1]
+#define r_dh   emu->regs[_rdx].byte[1]
+#define r_bh   emu->regs[_rbx].byte[1]
+#define r_sph  emu->regs[_rsp].byte[1]
+#define r_bph  emu->regs[_rbp].byte[1]
+#define r_sih  emu->regs[_rsi].byte[1]
+#define r_dih  emu->regs[_rdi].byte[1]
 
 /* signed */
 
@@ -179,5 +189,15 @@ enum {
 #define s_r13b emu->regs[_r13].sbyte[0]
 #define s_r14b emu->regs[_r14].sbyte[0]
 #define s_r15b emu->regs[_r15].sbyte[0]
+
+/* byte 1 */
+#define s_ah   emu->regs[_rax].sbyte[1]
+#define s_ch   emu->regs[_rcx].sbyte[1]
+#define s_dh   emu->regs[_rdx].sbyte[1]
+#define s_bh   emu->regs[_rbx].sbyte[1]
+#define s_sph  emu->regs[_rsp].sbyte[1]
+#define s_bph  emu->regs[_rbp].sbyte[1]
+#define s_sih  emu->regs[_rsi].sbyte[1]
+#define s_dih  emu->regs[_rdi].sbyte[1]
 
 #endif /* __X64REGS_PRIVATE_H_ */

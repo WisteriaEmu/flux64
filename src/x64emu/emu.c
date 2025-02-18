@@ -19,6 +19,7 @@ bool x64emu_init(x64emu_t *emu, x64context_t *ctx) {
 
     emu->ctx = ctx;
 
+    r_eflags |= 2; /* set the reserved second bit. */
     r_rsp = (uintptr_t)ctx->stack.base + ctx->stack.size; /* top of the stack */
     x64stack_setup(emu);
 
@@ -48,7 +49,7 @@ static inline void print_emu_state(x64emu_t *emu, x64instr_t *ins, uint64_t rip)
     ADD_REG(r12) ADD_REG(r13) ADD_REG(r14) ADD_REG(r15)
 #undef ADD_REG
 
-    if (emu->flags.raw != emu_saved.flags.raw) {
+    if (r_flags != emu_saved.flags.qword[0]) {
         target += sprintf(target, "rflags: [ ");
 #define ADD_FLAG(flag) if (f_ ## flag) target += sprintf(target, "%s ", #flag);
         ADD_FLAG(CF)   ADD_FLAG(PF)   ADD_FLAG(AF)   ADD_FLAG(ZF)
@@ -58,7 +59,7 @@ static inline void print_emu_state(x64emu_t *emu, x64instr_t *ins, uint64_t rip)
         ADD_FLAG(ID)
 #undef ADD_FLAG
         target += sprintf(target, "]   ");
-        emu_saved.flags.raw = emu->flags.raw;
+        emu_saved.flags.qword[0] = r_flags;
     }
 
     char instr_str[48] = { 0 };

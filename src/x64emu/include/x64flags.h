@@ -4,7 +4,8 @@
 #include <stdint.h>
 
 typedef union {
-    uint64_t raw;
+    uint64_t qword[1];
+    uint32_t dword[2];
     struct {
         uint64_t CF   : 1;  /*     0  Carry Flag */
         uint64_t      : 1;  /*     1  Reserved */

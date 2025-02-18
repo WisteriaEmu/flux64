@@ -23,6 +23,11 @@ bool x64execute_0f(x64emu_t *emu, x64instr_t *ins) {
         case 0x18 ... 0x1F:   /* HINT_NOP */
             break;
 
+        case 0x40 ... 0x4F:   /* CMOVcc r16/32/64,r/m16/32/64 */
+            if (x64execute_jmp_cond(emu, ins, op))
+                OPERATION_16_32_64(DEST_REG_SRC_RM, OP_UNSIGNED_MOV, U_64)
+            break;
+
         case 0x80 ... 0x8F:   /* Jcc rel16/32 */
             if (x64execute_jmp_cond(emu, ins, op))
                 r_rip += (ins->operand_sz) ? (int64_t)ins->imm.sword[0] : (int64_t)ins->imm.sdword[0];
