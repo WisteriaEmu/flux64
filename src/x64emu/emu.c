@@ -32,6 +32,7 @@ bool x64emu_init(x64emu_t *emu, x64context_t *ctx) {
     return true;
 }
 
+#ifdef HAVE_TRACE
 static inline void print_emu_state(x64emu_t *emu, x64instr_t *ins, uint64_t rip) {
     static x64emu_t emu_saved = { 0 };
 
@@ -69,10 +70,14 @@ static inline void print_emu_state(x64emu_t *emu, x64instr_t *ins, uint64_t rip)
 
     log_dump("%lx: %-32s %s", rip, instr_str, changes);
 }
+#else /* !HAVE_TRACE */
+static inline void print_emu_state(x64emu_t *emu, x64instr_t *ins, uint64_t rip) { }
+#endif
 
 void x64emu_run(x64emu_t *emu) {
     while (1) {
         x64instr_t instr = { 0 };
+
         uint64_t start_rip = r_rip;
 
         if (!x64decode(emu, &instr))

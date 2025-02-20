@@ -89,9 +89,17 @@ typedef struct {
 } x64instr_t;
 
 /* fetch N bits of instruction. */
+
+#ifdef HAVE_TRACE
 uint8_t  fetch_8(x64emu_t *emu, x64instr_t *ins);
 uint16_t fetch_16(x64emu_t *emu, x64instr_t *ins);
 uint32_t fetch_32(x64emu_t *emu, x64instr_t *ins);
 uint64_t fetch_64(x64emu_t *emu, x64instr_t *ins);
+#else
+#define fetch_8(emu, ins) (*(uint8_t *)(r_rip++))
+#define fetch_16(emu, ins) (*(uint16_t *)(r_rip += 2, r_rip - 2))
+#define fetch_32(emu, ins) (*(uint32_t *)(r_rip += 4, r_rip - 4))
+#define fetch_64(emu, ins) (*(uint64_t *)(r_rip += 8, r_rip - 8))
+#endif
 
 #endif /* __X64INSTR_H_ */

@@ -10,6 +10,7 @@
 
 SET_DEBUG_CHANNEL("X64DECODE")
 
+#ifdef HAVE_TRACE
 uint8_t fetch_8(x64emu_t *emu, x64instr_t *ins) {
     uint8_t v = *(uint8_t  *)(r_rip++);
     *(uint8_t *)(ins->desc.bytes + ins->desc.bytes_len) = v;
@@ -37,6 +38,7 @@ uint64_t fetch_64(x64emu_t *emu, x64instr_t *ins) {
     ins->desc.bytes_len += 8;
     return v;
 }
+#endif /* HAVE_TRACE */
 
 /**
  * @return Next byte of instruction that does not seem like a prefix byte.
@@ -255,6 +257,18 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
 
         case 0xEB:            /* JMP rel8 */
             ins->imm.byte[0] = fetch_8(emu, ins);
+            break;
+
+        case 0xF6:            /* TEST/NOT/NEG/MUL/IMUL/DIV/IDIV r/m8,imm8 */
+            x64modrm_fetch(emu, ins);
+            if (ins->modrm.reg <= 1)
+                ins->imm.byte[0] = fetch_8(emu, ins);
+            break;
+
+        case 0xF7:            /* TEST/NOT/NEG/MUL/IMUL/DIV/IDIV r/m16/32/64,imm16/32/32 */
+            x64modrm_fetch(emu, ins);
+            if (ins->modrm.reg <= 1)
+                fetch_imm_16_32_32(emu, ins);
             break;
 
         case 0xFE:            /* INC/DEC r/m8 */

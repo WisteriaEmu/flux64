@@ -173,6 +173,47 @@ static inline bool x64execute_C7(x64emu_t *emu, x64instr_t *ins) {
     return true;
 }
 
+static inline bool x64execute_F6(x64emu_t *emu, x64instr_t *ins) {
+    void *dest = x64modrm_get_rm(emu, ins);
+    switch (ins->modrm.reg) {
+        case 0x0 ... 0x1:    /* TEST r/m8,imm8 */
+            OP_BITWISE_TEST_AND(int8_t, uint8_t, ins->imm.sbyte[0])
+            break;
+        case 0x2:            /* NOT r/m8 */
+            OP_UNSIGNED_MOV(int8_t, uint8_t, ~(*(uint8_t *)dest))
+            break;
+        case 0x3:            /* NEG r/m8 */
+            OP_SIGNED_MOV(int8_t, uint8_t, -(*(int8_t *)dest))
+            break;
+        default:
+            log_err("Unimplemented opcode F6 extension %X", ins->modrm.reg);
+            return false;
+    }
+    return true;
+}
+
+static inline bool x64execute_F7(x64emu_t *emu, x64instr_t *ins) {
+    void *dest = x64modrm_get_rm(emu, ins);
+    switch (ins->modrm.reg) {
+        case 0x0 ... 0x1:    /* TEST r/m16/32/64,imm16/32/32 */
+            DEST_OPERATION_S_32(OP_BITWISE_TEST_AND, &ins->imm)
+            break;
+        case 0x2:            /* NOT r/m16/32/64 */
+            DEST_OPERATION(OP_UNSIGNED_MOV,
+                           ~(*(uint64_t *)dest), ~(*(uint16_t *)dest), ~(*(uint32_t *)dest))
+            break;
+        case 0x3:            /* NEG r/m16/32/64 */
+            DEST_OPERATION(OP_SIGNED_MOV,
+                           -(*(int64_t *)dest), -(*(int16_t *)dest), -(*(int32_t *)dest))
+            break;
+        default:
+            log_err("Unimplemented opcode F7 extension %X", ins->modrm.reg);
+            return false;
+    }
+    return true;
+}
+
+
 static inline bool x64execute_FE(x64emu_t *emu, x64instr_t *ins) {
     void *dest = x64modrm_get_rm(emu, ins);
     switch (ins->modrm.reg) {
@@ -536,6 +577,16 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
 
         case 0xEB:            /* JMP rel8 */
             r_rip += (int64_t)ins->imm.sbyte[0];
+            break;
+
+        case 0xF6:            /* TEST/NOT/NEG/MUL/IMUL/DIV/IDIV r/m8,imm8 */
+            if (!x64execute_F6(emu, ins))
+                return false;
+            break;
+
+        case 0xF7:            /* TEST/NOT/NEG/MUL/IMUL/DIV/IDIV r/m16/32/64,imm16/32/32 */
+            if (!x64execute_F7(emu, ins))
+                return false;
             break;
 
         case 0xFE:            /* INC/DEC r/m8 */
