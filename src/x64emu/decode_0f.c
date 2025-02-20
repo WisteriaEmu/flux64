@@ -32,6 +32,13 @@ bool x64decode_0f(x64emu_t *emu, x64instr_t *ins) {
                 ins->imm.dword[0] = fetch_32(emu, ins);
             break;
 
+        case 0x90 ... 0x9F:   /* SETcc r/m8 */
+            x64modrm_fetch(emu, ins);
+            break;
+
+        case 0xA2:            /* CPUID */
+            break;
+
         case 0xB6 ... 0xB7:   /* MOVZX r16/32/64,r/m8 / r16/32/64,r/m16 */
             x64modrm_fetch(emu, ins);
             break;

@@ -24,8 +24,14 @@ bool x64emu_init(x64emu_t *emu, x64context_t *ctx);
 
 /**
  * Execute instructions.
+ * Returns when a bad opcode is fetched.
  */
 void x64emu_run(x64emu_t *emu);
+
+/**
+ * Free emu and context.
+ */
+bool x64emu_free(x64emu_t *emu);
 
 bool x64syscall(x64emu_t *emu);
 

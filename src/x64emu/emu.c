@@ -84,3 +84,9 @@ void x64emu_run(x64emu_t *emu) {
             return;
     }
 }
+
+bool x64emu_free(x64emu_t *emu) {
+    if (!x64context_free(emu->ctx))
+        return false;
+    return true;
+}

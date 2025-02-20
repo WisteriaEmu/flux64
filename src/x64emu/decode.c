@@ -48,7 +48,7 @@ static inline uint8_t decode_prefixes(x64emu_t *emu, x64instr_t *ins) {
         switch (byte) {
             case 0x40 ... 0x4F:   /* REX. */
                 ins->rex.byte = byte;
-                break;
+                return fetch_8(emu, ins); /* REX must be the last prefix. */
             case 0x26:
             case 0x2E:            /* Branch not taken. */
             case 0x36:
@@ -57,7 +57,7 @@ static inline uint8_t decode_prefixes(x64emu_t *emu, x64instr_t *ins) {
             case 0x64:
             case 0x65:            /* Segment override. */
                 log_err("Unimplemented segment override: %02X", byte);
-                break;
+                return 6; /* Any invalid opcode. */
             case 0x66:            /* Operand-size override. */
                 ins->operand_sz = true;
                 break;
@@ -69,7 +69,7 @@ static inline uint8_t decode_prefixes(x64emu_t *emu, x64instr_t *ins) {
             case 0xF3:            /* REPE/REPZ */
                 if (byte == 0xF0) {
                     log_err("Unimplemented LOCK prefix");
-                    return false;
+                    return 6; /* Any invalid opcode. */
                 }
                 ins->rep = byte;
                 break;
@@ -79,7 +79,7 @@ static inline uint8_t decode_prefixes(x64emu_t *emu, x64instr_t *ins) {
     }
 }
 
-/* Fetch 16 or 32 bits base on 66H prefix. */
+/* Fetch 16 or 32 bits based on 66H prefix. */
 static inline void fetch_imm_16_32_32(x64emu_t *emu, x64instr_t *ins) {
     if (ins->operand_sz)
         ins->imm.word[0]  = fetch_16(emu, ins);
@@ -230,12 +230,21 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
         case 0xC3:            /* RET */
             break;
 
+        case 0xC6:            /* MOV r/m8,imm8 */
+            x64modrm_fetch(emu, ins);
+            ins->imm.byte[0] = fetch_8(emu, ins);
+            break;
+
         case 0xC7:            /* MOV r/m16/32/64,imm16/32/32 */
             x64modrm_fetch(emu, ins);
             fetch_imm_16_32_32(emu, ins);
             break;
 
         case 0xC9:            /* LEAVE */
+            break;
+
+        case 0xD0 ... 0xD3:   /* rotate/shift r/m,1/CL */
+            x64modrm_fetch(emu, ins);
             break;
 
         case 0xE8:            /* CALL rel32 */

@@ -26,8 +26,11 @@ bool x64syscall(x64emu_t *emu) {
                 s_rax = -errno;
             break;
 
-        case 0x3C:            /* SYS_exit */
-            _exit(s_edi);
+        case 0x3C: {          /* SYS_exit */
+            int status = s_edi;
+            x64emu_free(emu);
+            _exit(status);
+        }
 
         default:
             log_err("Unimplemented syscall 0x%lx", r_rax);

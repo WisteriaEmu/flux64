@@ -33,6 +33,17 @@ bool x64execute_0f(x64emu_t *emu, x64instr_t *ins) {
                 r_rip += (ins->operand_sz) ? (int64_t)ins->imm.sword[0] : (int64_t)ins->imm.sdword[0];
             break;
 
+        case 0x90 ... 0x9F: { /* SETcc r/m8 */
+            void *dest = x64modrm_get_rm(emu, ins);
+            *(uint8_t *)dest = x64execute_jmp_cond(emu, ins, op) ? 1 : 0;
+            break;
+        }
+
+        case 0xA2:            /* CPUID */
+            /* FIXME: implement that. */
+            r_eax = r_ebx = r_ecx = r_edx = 0;
+            break;
+
         case 0xB6:            /* MOVZX r16/32/64,r/m8 */
             OPERATION_16_32_64(DEST_REG_SRC_RM, OP_UNSIGNED_MOV, U_8)
             break;

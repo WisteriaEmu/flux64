@@ -28,7 +28,7 @@ int main(int argc, char *argv[], char *envp[]) {
 
     int ret = 0;
 
-    if (!x64context_free(&ctx)) ret = 1;
+    if (!x64emu_free(&emu)) ret = 1;
 
     return ret;
 }
