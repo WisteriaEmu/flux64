@@ -2,6 +2,8 @@
 #ifndef __EXECUTE_PRIVATE_H_
 #define __EXECUTE_PRIVATE_H_
 
+#include <stdint.h>
+
 /* 1 when byte has even number of set bits. */
 static inline uint8_t get_byte_parity(uint8_t x) {
     x ^= x >> 4;
@@ -16,6 +18,106 @@ static inline uint8_t get_byte_parity(uint8_t x) {
     f_ZF = (x) == 0; \
     f_PF = get_byte_parity(x);
 
+
+
+
+/* when shift = 0, no flags are affected. */
+/* CF (for shift > 0) is set to the last bit shifted out,
+   OF (for shift = 1) to CF xor result MSB. */
+#define ROTATE_LEFT_FLAG_IMPL(s_type, u_type, operand) \
+    if (shift > 0) { \
+        f_CF = (tdest >> (type_len - shift)) & 1; \
+        if (shift == 1) f_OF = f_CF ^ (*(u_type *)dest >> (type_len - 1)); \
+    }
+
+
+/* CF (for shift > 0) is set to the last bit shifted out,
+   OF (for shift = 1) to MSB xor MSB-1. */
+#define ROTATE_RIGHT_FLAG_IMPL(s_type, u_type, operand) \
+    if (shift > 0) { \
+        f_CF = (tdest >> (shift - 1)) & 1; \
+        if (shift == 1) f_OF = ((*(u_type *)dest >> (type_len - 2)) & 1) ^ \
+                                (*(u_type *)dest >> (type_len - 1)); \
+    }
+
+/* Same as rotating, but sets SF, ZF, PF. */
+
+#define SHIFT_LEFT_FLAG_IMPL(s_type, u_type, operand) \
+    if (shift > 0) { \
+        f_CF = (tdest >> (type_len - shift)) & 1; \
+        SET_RESULT_FLAGS(*(s_type *)dest) \
+        if (shift == 1) f_OF = f_CF ^ (*(u_type *)dest >> (type_len - 1)); \
+    }
+
+/* for signed shift and shift > type_len CF is set to 1? */
+
+#define SHIFT_RIGHT_FLAG_IMPL(s_type, u_type, operand) \
+    if (shift > 0) { \
+        f_CF = (tdest >> (shift - 1)) & 1; \
+        SET_RESULT_FLAGS(*(s_type *)dest) \
+        if (shift == 1) f_OF = ((*(u_type *)dest >> (type_len - 2)) & 1) ^ \
+                                (*(u_type *)dest >> (type_len - 1)); \
+    }
+
+
+/* Shared variables macro between rotate operations. */
+#define ROTATE_PROLOGUE(s_type, u_type, operand) \
+    uint8_t type_len = sizeof(u_type) * 8; \
+    uint8_t shift = (operand) & (type_len - 1); \
+    u_type tdest = *(u_type *)dest;
+
+/* Rotate/Shift operations. */
+
+#define OP_ROTATE_LEFT(s_type, u_type, operand) { \
+    ROTATE_PROLOGUE(s_type, u_type, operand) \
+    *(u_type *)dest = (tdest << shift) | (tdest >> (type_len - shift)); \
+    ROTATE_LEFT_FLAG_IMPL(s_type, u_type, operand) \
+}
+
+#define OP_ROTATE_RIGHT(s_type, u_type, operand) { \
+    ROTATE_PROLOGUE(s_type, u_type, operand) \
+    *(u_type *)dest = (tdest >> shift) | (tdest << (type_len - shift)); \
+    ROTATE_RIGHT_FLAG_IMPL(s_type, u_type, operand) \
+}
+
+
+#define OP_ROTATE_LEFT_CF(s_type, u_type, operand) { \
+    ROTATE_PROLOGUE(s_type, u_type, operand) \
+    *(u_type *)dest = (tdest << shift) | (tdest >> (type_len + 1 - shift)) | \
+                      ((shift) ? (f_CF << (shift - 1)) : 0); \
+    ROTATE_LEFT_FLAG_IMPL(s_type, u_type, operand) \
+}
+
+#define OP_ROTATE_RIGHT_CF(s_type, u_type, operand) { \
+    ROTATE_PROLOGUE(s_type, u_type, operand) \
+    *(u_type *)dest = (tdest >> shift) | (tdest << (type_len + 1 - shift)) | \
+                      (f_CF << (type_len - shift)); \
+    ROTATE_RIGHT_FLAG_IMPL(s_type, u_type, operand) \
+}
+
+
+#define OP_UNSIGNED_SHIFT_LEFT(s_type, u_type, operand) { \
+    ROTATE_PROLOGUE(s_type, u_type, operand) \
+    *(u_type *)dest <<= shift; \
+    SHIFT_LEFT_FLAG_IMPL(s_type, u_type, operand) \
+}
+
+#define OP_UNSIGNED_SHIFT_RIGHT(s_type, u_type, operand) { \
+    ROTATE_PROLOGUE(s_type, u_type, operand) \
+    *(u_type *)dest >>= shift; \
+    SHIFT_RIGHT_FLAG_IMPL(s_type, u_type, operand) \
+}
+
+
+/* FIXME: signed type shifts are implementation-defined. */
+/* operand is unsigned. */
+#define OP_SIGNED_SHIFT_RIGHT(s_type, u_type, operand) { \
+    ROTATE_PROLOGUE(s_type, s_type, operand) \
+    *(s_type *)dest >>= shift; \
+    SHIFT_RIGHT_FLAG_IMPL(s_type, u_type, operand) \
+}
+
+/* Bitwise logic. */
 
 /* Perform bitwise operation and update flags. */
 /* NOTE: state of AF is undefined. */
@@ -52,6 +154,8 @@ static inline uint8_t get_byte_parity(uint8_t x) {
 #define OP_BITWISE_OR(s_type, u_type, operand) \
     OP_BITWISE_IMPL(|, s_type, u_type, operand)
 
+
+/* ADD/SUB/CMP/INC/DEC */
 
 #define OP_SIGNED_ADD_IMPL(s_type, u_type, operand) \
     s_type _sav = *(s_type *)dest; \
@@ -112,6 +216,8 @@ static inline uint8_t get_byte_parity(uint8_t x) {
 }
 
 
+/* MOV */
+
 /* `*dest = operand` */
 #define OP_SIGNED_MOV(s_type, u_type, operand) { \
     *(s_type *)dest = operand; \
@@ -137,6 +243,8 @@ static inline uint8_t get_byte_parity(uint8_t x) {
             if (f_DF) *(tdest--) = operand; \
             else      *(tdest++) = operand; \
 }
+
+
 
 
 /* dest: r/m, src: reg, from ModR/M byte fields. */
@@ -240,7 +348,6 @@ static inline uint8_t get_byte_parity(uint8_t x) {
     else                      operation(int32_t, uint32_t, src)
 
 #include <stdbool.h>
-#include <stdint.h>
 
 #include "x64emu.h"
 #include "x64instr.h"

@@ -197,6 +197,14 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
         case 0x9F:            /* LAHF */
             break;
 
+        case 0xA8:            /* TEST imm8 */
+            ins->imm.byte[0] = fetch_8(emu, ins);
+            break;
+
+        case 0xA9:            /* TEST imm16/32 */
+            fetch_imm_16_32_32(emu, ins);
+            break;
+
         case 0xAA:            /* STOS m8 */
         case 0xAB:            /* STOS m16/32/64 */
             break;
@@ -207,6 +215,12 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
 
         case 0xB8 ... 0xBF:   /* MOV+r16/32/64 imm16/32/64 */
             fetch_imm_16_32_64(emu, ins);
+            break;
+
+        case 0xC0:            /* rotate/shift r/m8,imm8 */
+        case 0xC1:            /* rotate/shift r/m16/32/64,imm8 */
+            x64modrm_fetch(emu, ins);
+            ins->imm.byte[0] = fetch_8(emu, ins);
             break;
 
         case 0xC2:            /* RET imm16 */
