@@ -57,7 +57,7 @@ typedef union {
  * Instruction debugging description.
  */
 typedef struct {
-    uint8_t bytes[15];        /* Instruction fetched bytes. */
+    uint8_t bytes[25];        /* Instruction fetched bytes. */
     uint8_t bytes_len;
 } x64instr_desc_t;
 

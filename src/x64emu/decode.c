@@ -81,7 +81,7 @@ static inline uint8_t decode_prefixes(x64emu_t *emu, x64instr_t *ins) {
     }
 }
 
-/* Fetch 16 or 32 bits based on 66H prefix. */
+/** Fetch 16 or 32 bits based on 66H prefix. */
 static inline void fetch_imm_16_32_32(x64emu_t *emu, x64instr_t *ins) {
     if (ins->operand_sz)
         ins->imm.word[0]  = fetch_16(emu, ins);
@@ -89,7 +89,7 @@ static inline void fetch_imm_16_32_32(x64emu_t *emu, x64instr_t *ins) {
         ins->imm.dword[0] = fetch_32(emu, ins);
 }
 
-/* Fetch 16, 32 or 64 bits based on REX.W and 66H prefix. */
+/** Fetch 16, 32 or 64 bits based on REX.W and 66H prefix. */
 static inline void fetch_imm_16_32_64(x64emu_t *emu, x64instr_t *ins) {
     if (ins->rex.w)
         ins->imm.qword[0] = fetch_64(emu, ins);
@@ -104,8 +104,6 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
 
     /* During decoding our goal is to map instruction bytes
        to fields of `x64instr_t`. */
-
-    /* Get ready for ugly macros... */
 
     switch (ins->opcode[0]) {
 #define OPCODE_FAMILY(start) \

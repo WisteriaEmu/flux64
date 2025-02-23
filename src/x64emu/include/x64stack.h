@@ -8,22 +8,22 @@
 #include "x64context.h"
 #include "x64emu.h"
 
+/** Map the initial stack. */
 bool x64stack_init(x64context_t *ctx);
 
+/** Unmap the stack. */
 bool x64stack_free(x64context_t *ctx);
 
-/**
- * Push initial data to the stack.
- */
+/** Push initial data to the stack. */
 void x64stack_setup(x64emu_t *emu);
 
-/* Push word to the stack. */
+/** Push word to the stack. */
 void push_16(x64emu_t *emu, uint16_t v);
 
-/* Push dword to the stack. */
+/** Push dword to the stack. */
 void push_32(x64emu_t *emu, uint32_t v);
 
-/* Push qword to the stack. */
+/** Push qword to the stack. */
 void push_64(x64emu_t *emu, uint64_t v);
 
 /** Push auxiliary vector of type `t` and value `v`. */

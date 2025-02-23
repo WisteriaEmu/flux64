@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+/** RFLAGS - 8 byte register. */
 typedef union {
     uint64_t qword[1];
     uint32_t dword[2];

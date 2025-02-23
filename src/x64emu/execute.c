@@ -13,8 +13,6 @@
 
 SET_DEBUG_CHANNEL("X64EXECUTE")
 
-/* Some ugly macros for repeating opcodes and their extensions. */
-
 #define OPCODE_EXT_CASE(case_op) \
     case_op(0x0, OP_SIGNED_ADD) \
     case_op(0x1, OP_BITWISE_OR) \
@@ -76,7 +74,7 @@ static inline bool x64execute_83(x64emu_t *emu, x64instr_t *ins) {
     case_op(0x6, OP_UNSIGNED_SHIFT_LEFT) \
     case_op(0x7, OP_SIGNED_SHIFT_RIGHT)
 
-static inline bool x64execute_C0(x64emu_t *emu, x64instr_t *ins) {
+static inline bool x64execute_c0(x64emu_t *emu, x64instr_t *ins) {
     void *dest = x64modrm_get_rm(emu, ins);
 #define CASE_OP(x, oper) case x: oper(int8_t, uint8_t, ins->imm.byte[0]) break;
     switch (ins->modrm.reg) { OPCODE_EXT_CASE(CASE_OP) }
@@ -84,7 +82,7 @@ static inline bool x64execute_C0(x64emu_t *emu, x64instr_t *ins) {
     return true;
 }
 
-static inline bool x64execute_C1(x64emu_t *emu, x64instr_t *ins) {
+static inline bool x64execute_c1(x64emu_t *emu, x64instr_t *ins) {
     void *dest = x64modrm_get_rm(emu, ins);
 #define CASE_OP(x, oper) \
     case x: \
@@ -95,7 +93,7 @@ static inline bool x64execute_C1(x64emu_t *emu, x64instr_t *ins) {
     return true;
 }
 
-static inline bool x64execute_D0(x64emu_t *emu, x64instr_t *ins) {
+static inline bool x64execute_d0(x64emu_t *emu, x64instr_t *ins) {
     void *dest = x64modrm_get_rm(emu, ins);
 #define CASE_OP(x, oper) case x: oper(int8_t, uint8_t, 1) break;
     switch (ins->modrm.reg) { OPCODE_EXT_CASE(CASE_OP) }
@@ -103,7 +101,7 @@ static inline bool x64execute_D0(x64emu_t *emu, x64instr_t *ins) {
     return true;
 }
 
-static inline bool x64execute_D1(x64emu_t *emu, x64instr_t *ins) {
+static inline bool x64execute_d1(x64emu_t *emu, x64instr_t *ins) {
     void *dest = x64modrm_get_rm(emu, ins);
 #define CASE_OP(x, oper) case x: DEST_OPERATION(oper, 1, 1, 1) break;
     switch (ins->modrm.reg) { OPCODE_EXT_CASE(CASE_OP) }
@@ -111,7 +109,7 @@ static inline bool x64execute_D1(x64emu_t *emu, x64instr_t *ins) {
     return true;
 }
 
-static inline bool x64execute_D2(x64emu_t *emu, x64instr_t *ins) {
+static inline bool x64execute_d2(x64emu_t *emu, x64instr_t *ins) {
     void *dest = x64modrm_get_rm(emu, ins);
 #define CASE_OP(x, oper) case x: oper(int8_t, uint8_t, r_cl) break;
     switch (ins->modrm.reg) { OPCODE_EXT_CASE(CASE_OP) }
@@ -119,7 +117,7 @@ static inline bool x64execute_D2(x64emu_t *emu, x64instr_t *ins) {
     return true;
 }
 
-static inline bool x64execute_D3(x64emu_t *emu, x64instr_t *ins) {
+static inline bool x64execute_d3(x64emu_t *emu, x64instr_t *ins) {
     void *dest = x64modrm_get_rm(emu, ins);
 #define CASE_OP(x, oper) case x: DEST_OPERATION(oper, r_cl, r_cl, r_cl) break;
     switch (ins->modrm.reg) { OPCODE_EXT_CASE(CASE_OP) }
@@ -129,9 +127,7 @@ static inline bool x64execute_D3(x64emu_t *emu, x64instr_t *ins) {
 
 #undef OPCODE_EXT_CASE
 
-/* ugly macros end. */
-
-static inline bool x64execute_8F(x64emu_t *emu, x64instr_t *ins) {
+static inline bool x64execute_8f(x64emu_t *emu, x64instr_t *ins) {
     void *dest = x64modrm_get_rm(emu, ins);
     switch (ins->modrm.reg) {
         case 0x0:            /* POP r/m16/64 */
@@ -147,7 +143,7 @@ static inline bool x64execute_8F(x64emu_t *emu, x64instr_t *ins) {
     return true;
 }
 
-static inline bool x64execute_C6(x64emu_t *emu, x64instr_t *ins) {
+static inline bool x64execute_c6(x64emu_t *emu, x64instr_t *ins) {
     void *dest = x64modrm_get_rm(emu, ins);
     switch (ins->modrm.reg) {
         case 0x0:             /* MOV r/m8,imm8 */
@@ -160,7 +156,7 @@ static inline bool x64execute_C6(x64emu_t *emu, x64instr_t *ins) {
     return true;
 }
 
-static inline bool x64execute_C7(x64emu_t *emu, x64instr_t *ins) {
+static inline bool x64execute_c7(x64emu_t *emu, x64instr_t *ins) {
     void *dest = x64modrm_get_rm(emu, ins);
     switch (ins->modrm.reg) {
         case 0x0:             /* MOV r/m16/32/64,imm16/32/32 */
@@ -173,7 +169,7 @@ static inline bool x64execute_C7(x64emu_t *emu, x64instr_t *ins) {
     return true;
 }
 
-static inline bool x64execute_F6(x64emu_t *emu, x64instr_t *ins) {
+static inline bool x64execute_f6(x64emu_t *emu, x64instr_t *ins) {
     void *dest = x64modrm_get_rm(emu, ins);
     switch (ins->modrm.reg) {
         case 0x0 ... 0x1:    /* TEST r/m8,imm8 */
@@ -192,7 +188,7 @@ static inline bool x64execute_F6(x64emu_t *emu, x64instr_t *ins) {
     return true;
 }
 
-static inline bool x64execute_F7(x64emu_t *emu, x64instr_t *ins) {
+static inline bool x64execute_f7(x64emu_t *emu, x64instr_t *ins) {
     void *dest = x64modrm_get_rm(emu, ins);
     switch (ins->modrm.reg) {
         case 0x0 ... 0x1:    /* TEST r/m16/32/64,imm16/32/32 */
@@ -214,7 +210,7 @@ static inline bool x64execute_F7(x64emu_t *emu, x64instr_t *ins) {
 }
 
 
-static inline bool x64execute_FE(x64emu_t *emu, x64instr_t *ins) {
+static inline bool x64execute_fe(x64emu_t *emu, x64instr_t *ins) {
     void *dest = x64modrm_get_rm(emu, ins);
     switch (ins->modrm.reg) {
         case 0x0:             /* INC r/m8 */
@@ -230,7 +226,7 @@ static inline bool x64execute_FE(x64emu_t *emu, x64instr_t *ins) {
     return true;
 }
 
-static inline bool x64execute_FF(x64emu_t *emu, x64instr_t *ins) {
+static inline bool x64execute_ff(x64emu_t *emu, x64instr_t *ins) {
     void *dest = x64modrm_get_rm(emu, ins);
     switch (ins->modrm.reg) {
         case 0x0:             /* INC r/m16/32/64 */
@@ -259,8 +255,6 @@ static inline bool x64execute_FF(x64emu_t *emu, x64instr_t *ins) {
 
 bool x64execute(x64emu_t *emu, x64instr_t *ins) {
     uint8_t op = ins->opcode[0];
-
-    /* Get ready for ugly macros... */
 
     switch (op) {
 
@@ -406,7 +400,7 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
         }
 
         case 0x8F:            /* POP r/m16/64 */
-            if (!x64execute_8F(emu, ins))
+            if (!x64execute_8f(emu, ins))
                 return false;
             break;
 
@@ -500,11 +494,11 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
         }
 
         case 0xC0:            /* rotate/shift r/m8,imm8 */
-            if (!x64execute_C0(emu, ins))
+            if (!x64execute_c0(emu, ins))
                 return false;
             break;
         case 0xC1:            /* rotate/shift r/m16/32/64,imm8 */
-            if (!x64execute_C1(emu, ins))
+            if (!x64execute_c1(emu, ins))
                 return false;
             break;
 
@@ -524,12 +518,12 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0xC6:            /* MOV r/m8,imm8 */
-            if (!x64execute_C6(emu, ins))
+            if (!x64execute_c6(emu, ins))
                 return false;
             break;
 
         case 0xC7:            /* MOV r/m16/32/64,imm16/32/32 */
-            if (!x64execute_C7(emu, ins))
+            if (!x64execute_c7(emu, ins))
                 return false;
             break;
 
@@ -544,22 +538,22 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0xD0:            /* rotate/shift r/m8,1 */
-            if (!x64execute_D0(emu, ins))
+            if (!x64execute_d0(emu, ins))
                 return false;
             break;
 
         case 0xD1:            /* rotate/shift r/m16/32/64,1 */
-            if (!x64execute_D1(emu, ins))
+            if (!x64execute_d1(emu, ins))
                 return false;
             break;
 
         case 0xD2:            /* rotate/shift r/m8,CL */
-            if (!x64execute_D2(emu, ins))
+            if (!x64execute_d2(emu, ins))
                 return false;
             break;
 
         case 0xD3:            /* rotate/shift r/m16/32/64,CL */
-            if (!x64execute_D3(emu, ins))
+            if (!x64execute_d3(emu, ins))
                 return false;
             break;
 
@@ -580,22 +574,22 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0xF6:            /* TEST/NOT/NEG/MUL/IMUL/DIV/IDIV r/m8,imm8 */
-            if (!x64execute_F6(emu, ins))
+            if (!x64execute_f6(emu, ins))
                 return false;
             break;
 
         case 0xF7:            /* TEST/NOT/NEG/MUL/IMUL/DIV/IDIV r/m16/32/64,imm16/32/32 */
-            if (!x64execute_F7(emu, ins))
+            if (!x64execute_f7(emu, ins))
                 return false;
             break;
 
         case 0xFE:            /* INC/DEC r/m8 */
-            if (!x64execute_FE(emu, ins))
+            if (!x64execute_fe(emu, ins))
                 return false;
             break;
 
         case 0xFF:            /* INC/DEC/CALL/CALLF/JMP/JMPF/PUSH r/m */
-            if (!x64execute_FF(emu, ins))
+            if (!x64execute_ff(emu, ins))
                 return false;
             break;
 

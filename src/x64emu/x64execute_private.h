@@ -1,6 +1,6 @@
 
-#ifndef __EXECUTE_PRIVATE_H_
-#define __EXECUTE_PRIVATE_H_
+#ifndef __X64EXECUTE_PRIVATE_H_
+#define __X64EXECUTE_PRIVATE_H_
 
 #include <stdint.h>
 
@@ -40,6 +40,7 @@ static inline uint8_t get_byte_parity(uint8_t x) {
                                 (*(u_type *)dest >> (type_len - 1)); \
     }
 
+
 /* Same as rotating, but sets SF, ZF, PF. */
 
 #define SHIFT_LEFT_FLAG_IMPL(s_type, u_type, operand) \
@@ -60,13 +61,14 @@ static inline uint8_t get_byte_parity(uint8_t x) {
     }
 
 
+
 /* Shared variables macro between rotate operations. */
 #define ROTATE_PROLOGUE(s_type, u_type, operand) \
     uint8_t type_len = sizeof(u_type) * 8; \
     uint8_t shift = (operand) & (type_len - 1); \
     u_type tdest = *(u_type *)dest;
 
-/* Rotate/Shift operations. */
+
 
 #define OP_ROTATE_LEFT(s_type, u_type, operand) { \
     ROTATE_PROLOGUE(s_type, u_type, operand) \
@@ -96,6 +98,7 @@ static inline uint8_t get_byte_parity(uint8_t x) {
 }
 
 
+
 #define OP_UNSIGNED_SHIFT_LEFT(s_type, u_type, operand) { \
     ROTATE_PROLOGUE(s_type, u_type, operand) \
     *(u_type *)dest <<= shift; \
@@ -117,7 +120,8 @@ static inline uint8_t get_byte_parity(uint8_t x) {
     SHIFT_RIGHT_FLAG_IMPL(s_type, u_type, operand) \
 }
 
-/* Bitwise logic. */
+
+
 
 /* Perform bitwise operation and update flags. */
 /* NOTE: state of AF is undefined. */
@@ -155,7 +159,7 @@ static inline uint8_t get_byte_parity(uint8_t x) {
     OP_BITWISE_IMPL(|, s_type, u_type, operand)
 
 
-/* ADD/SUB/CMP/INC/DEC */
+
 
 #define OP_SIGNED_ADD_IMPL(s_type, u_type, operand) \
     s_type _sav = *(s_type *)dest; \
@@ -181,6 +185,7 @@ static inline uint8_t get_byte_parity(uint8_t x) {
     OP_SIGNED_ADD_IMPL(s_type, u_type, operand) \
     *(s_type *)dest = _res; \
 }
+
 
 
 #define OP_SIGNED_CMP_IMPL(s_type, u_type, operand) \
@@ -216,7 +221,7 @@ static inline uint8_t get_byte_parity(uint8_t x) {
 }
 
 
-/* MOV */
+
 
 /* `*dest = operand` */
 #define OP_SIGNED_MOV(s_type, u_type, operand) { \
@@ -256,6 +261,7 @@ static inline uint8_t get_byte_parity(uint8_t x) {
 #define GET_DEST_REG_SRC_RM() \
     void *src  = x64modrm_get_rm(emu, ins); \
     void *dest = x64modrm_get_reg(emu, ins);
+
 
 /* Perform specified operation on dest using src operands. */
 #define DEST_OPERATION(operation, src64, src16, src32) \
@@ -347,6 +353,8 @@ static inline uint8_t get_byte_parity(uint8_t x) {
     else if (ins->operand_sz) operation(int16_t, uint16_t, src) \
     else                      operation(int32_t, uint32_t, src)
 
+
+
 #include <stdbool.h>
 
 #include "x64emu.h"
@@ -376,4 +384,4 @@ static inline bool x64execute_jmp_cond(x64emu_t *emu, x64instr_t *ins, uint8_t o
     return ret;
 }
 
-#endif /* __EXECUTE_PRIVATE_H_ */
+#endif /* __X64EXECUTE_PRIVATE_H_ */
