@@ -50,9 +50,6 @@ typedef union {
     };
 } x64modrm_t;
 
-/* Some instructions can have up to 8 bytes of
-   immediate or displacement data. */
-
 /**
  * Instruction debugging description.
  */
@@ -85,7 +82,9 @@ typedef struct {
     x64sib_t        sib;            /* SIB byte. */
     reg64_t         displ;          /* Address displacement. */
     reg64_t         imm;            /* Immediate data. */
+#ifdef HAVE_TRACE
     x64instr_desc_t desc;
+#endif /* HAVE_TRACE */
 } x64instr_t;
 
 /* fetch N bits of instruction. */
