@@ -431,19 +431,19 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0x9D:            /* POPF/POPFQ */
-            /* FIXME: Privilege levels. (currently always 0) */
+            /* FIXME: Privilege levels. (currently always 3) */
             if (ins->operand_sz)
-                //    00111111111010101  to be updated from the stack
-                //        7   F   D   5
-                // ..101000000000101010  to be preserved
-                //    E   8   0   2   A
-                r_eflags = (r_eflags & 0xfffe802a) | ((uint32_t)pop_16(emu) & 0x7fd5);
+                //    00100111111010101  to be updated from the stack
+                //        4   F   D   5
+                // ..101011000000101010  to be preserved
+                //    E   B   0   2   A
+                r_eflags = (r_eflags & 0xfffeb02a) | ((uint32_t)pop_16(emu) & 0x4fd5);
             else
-                //     1001000111111111010101  to be updated from the stack
-                //      2   4   7   F   D   5
-                // ..110110101000000000101010  to be preserved
-                //      D   A   8   0   2   A
-                r_eflags = (r_eflags & 0xffda802a) | ((uint32_t)pop_64(emu) & 0x247fd5);
+                //     1001000100111111010101  to be updated from the stack
+                //      2   4   4   F   D   5
+                // ..110110101011000000101010  to be preserved
+                //      D   A   B   0   2   A
+                r_eflags = (r_eflags & 0xffdab02a) | ((uint32_t)pop_64(emu) & 0x244fd5);
             break;
 
         case 0x9E:            /* SAHF */
@@ -573,6 +573,10 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             r_rip += (int64_t)ins->imm.sbyte[0];
             break;
 
+        case 0xF5:            /* CMC */
+            f_CF = !f_CF;
+            break;
+
         case 0xF6:            /* TEST/NOT/NEG/MUL/IMUL/DIV/IDIV r/m8,imm8 */
             if (!x64execute_f6(emu, ins))
                 return false;
@@ -581,6 +585,18 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
         case 0xF7:            /* TEST/NOT/NEG/MUL/IMUL/DIV/IDIV r/m16/32/64,imm16/32/32 */
             if (!x64execute_f7(emu, ins))
                 return false;
+            break;
+
+        case 0xF8 ... 0xF9:   /* CLC/STC */
+            f_CF = op & 1;
+            break;
+
+        case 0xFA ... 0xFB:   /* CLI/STI */
+            f_IF = op & 1;
+            break;
+
+        case 0xFC ... 0xFD:   /* CLD/STD */
+            f_DF = op & 1;
             break;
 
         case 0xFE:            /* INC/DEC r/m8 */

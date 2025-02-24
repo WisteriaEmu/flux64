@@ -205,8 +205,7 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             fetch_imm_16_32_32(emu, ins);
             break;
 
-        case 0xAA:            /* STOS m8 */
-        case 0xAB:            /* STOS m16/32/64 */
+        case 0xAA ... 0xAB:   /* STOS m8/16/32/64 */
             break;
 
         case 0xB0 ... 0xB7:   /* MOV+r8 imm8 */
@@ -217,8 +216,7 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             fetch_imm_16_32_64(emu, ins);
             break;
 
-        case 0xC0:            /* rotate/shift r/m8,imm8 */
-        case 0xC1:            /* rotate/shift r/m16/32/64,imm8 */
+        case 0xC0 ... 0xC1:   /* rotate/shift r/m8/16/32/64,imm8 */
             x64modrm_fetch(emu, ins);
             ins->imm.byte[0] = fetch_8(emu, ins);
             break;
@@ -247,14 +245,16 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             x64modrm_fetch(emu, ins);
             break;
 
-        case 0xE8:            /* CALL rel32 */
-        case 0xE9:            /* JMP rel32 */
+        case 0xE8 ... 0xE9:   /* CALL/JMP rel32 */
             /* rel32 is immediate data */
             ins->imm.dword[0] = fetch_32(emu, ins);
             break;
 
         case 0xEB:            /* JMP rel8 */
             ins->imm.byte[0] = fetch_8(emu, ins);
+            break;
+
+        case 0xF5:            /* CMC */
             break;
 
         case 0xF6:            /* TEST/NOT/NEG/MUL/IMUL/DIV/IDIV r/m8,imm8 */
@@ -269,8 +269,11 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
                 fetch_imm_16_32_32(emu, ins);
             break;
 
+        case 0xF8 ... 0xFD:   /* CLC/STC/CLI/STI/CLD/STD */
+            break;
+
         case 0xFE:            /* INC/DEC r/m8 */
-        case 0xFF:            /* INC/DEC/CALL/CALLF/JMP/JMPF/PUSH r/m */
+        case 0xFF:            /* INC/DEC/CALL/CALLF/JMP/JMPF/PUSH r/m16/32/64 */
             x64modrm_fetch(emu, ins);
             break;
 

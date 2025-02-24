@@ -20,6 +20,8 @@ bool x64emu_init(x64emu_t *emu, x64context_t *ctx) {
     emu->ctx = ctx;
 
     r_eflags |= 2; /* set the reserved second bit. */
+    f_IOPL = 3;    /* userspace privileges. */
+
     r_rsp = (uintptr_t)ctx->stack.base + ctx->stack.size; /* top of the stack */
     x64stack_setup(emu);
 
