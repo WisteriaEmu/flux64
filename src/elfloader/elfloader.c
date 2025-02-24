@@ -156,7 +156,7 @@ static bool load_program_headers(x64context_t *ctx, FILE *fd, Elf64_Ehdr *ehdr) 
             }
 
             if (fseek(fd, ph->p_offset, SEEK_SET) == -1 ||
-                fread(ret, ph->p_filesz, 1, fd) != 1)
+                fread((void *)ph->p_vaddr, ph->p_filesz, 1, fd) != 1)
             {
                 log_err("Failed to read segment");
                 return false;
