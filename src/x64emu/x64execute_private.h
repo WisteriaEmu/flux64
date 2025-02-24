@@ -159,6 +159,12 @@ static inline uint8_t get_byte_parity(uint8_t x) {
     OP_BITWISE_IMPL(|, s_type, u_type, operand)
 
 
+#define OP_BITWISE_NOT(s_type, u_type, operand) \
+    *(s_type *)dest = ~(*(s_type *)dest);
+
+
+#define OP_SIGNED_NEG(s_type, u_type, operand) \
+    *(s_type *)dest = -(*(s_type *)dest);
 
 
 #define OP_SIGNED_ADD_IMPL(s_type, u_type, operand) \
@@ -249,19 +255,21 @@ static inline uint8_t get_byte_parity(uint8_t x) {
             else      *(tdest++) = operand; \
 }
 
+#define GET_OPERAND_SRC_REG      void *src = x64modrm_get_reg(emu, ins);
+#define GET_OPERAND_SRC_R_M      void *src = x64modrm_get_r_m(emu, ins);
+#define GET_OPERAND_SRC_XMM      void *src = x64modrm_get_xmm(emu, ins);
+#define GET_OPERAND_SRC_XMM_M    void *src = x64modrm_get_xmm_m(emu, ins);
+#define GET_OPERAND_SRC_GPR(reg) void *src = emu->regs + (reg);
+#define GET_OPERAND_SRC_IMM      void *src = &ins->imm;
+#define GET_OPERAND_SRC_NULL
 
-
-
-/* dest: r/m, src: reg, from ModR/M byte fields. */
-#define GET_DEST_R_M_SRC_REG() \
-    void *src  = x64modrm_get_reg(emu, ins); \
-    void *dest = x64modrm_get_r_m(emu, ins);
-
-/* dest: reg, src: r/m, from ModR/M byte fields. */
-#define GET_DEST_REG_SRC_R_M() \
-    void *src  = x64modrm_get_r_m(emu, ins); \
-    void *dest = x64modrm_get_reg(emu, ins);
-
+#define GET_OPERAND_DEST_REG      void *dest = x64modrm_get_reg(emu, ins);
+#define GET_OPERAND_DEST_R_M      void *dest = x64modrm_get_r_m(emu, ins);
+#define GET_OPERAND_DEST_XMM      void *dest = x64modrm_get_xmm(emu, ins);
+#define GET_OPERAND_DEST_XMM_M    void *dest = x64modrm_get_xmm_m(emu, ins);
+#define GET_OPERAND_DEST_GPR(reg) void *dest = emu->regs + (reg);
+#define GET_OPERAND_DEST_IMM      void *dest = &ins->imm;
+#define GET_OPERAND_DEST_NULL
 
 /* Perform specified operation on dest using src operands. */
 #define DEST_OPERATION_16_32_64(operation, src64, src16, src32) \
@@ -318,20 +326,23 @@ static inline uint8_t get_byte_parity(uint8_t x) {
 /* Combined macros */
 
 /* Operation that uses 16, 32 or 64 bit destination size, and `ext` source operand size. */
-#define OPERATION_16_32_64(operandtype, operation, ext) { \
-    GET_ ## operandtype() \
+#define OPERATION_16_32_64(desttype, srctype, operation, ext) { \
+    GET_OPERAND_SRC_ ## srctype \
+    GET_OPERAND_DEST_ ## desttype \
     DEST_OPERATION_16_32_64_ ## ext(operation, src) \
 }
 
 /* Operation that uses fixed type of destination and source operands. */
-#define OPERATION_FIXED_S(operandtype, operation, s_type, u_type) { \
-    GET_ ## operandtype() \
+#define OPERATION_FIXED_S(desttype, srctype, operation, s_type, u_type) { \
+    GET_OPERAND_SRC_ ## srctype \
+    GET_OPERAND_DEST_ ## desttype \
     operation(s_type, u_type, *(s_type *)(src)) \
 }
 
 /* Operation that uses fixed type of destination and source operands. */
-#define OPERATION_FIXED_U(operandtype, operation, s_type, u_type) { \
-    GET_ ## operandtype() \
+#define OPERATION_FIXED_U(desttype, srctype, operation, s_type, u_type) { \
+    GET_OPERAND_SRC_ ## srctype \
+    GET_OPERAND_DEST_ ## desttype \
     operation(s_type, u_type, *(u_type *)(src)) \
 }
 
@@ -339,30 +350,30 @@ static inline uint8_t get_byte_parity(uint8_t x) {
    Cannot be used with previous macros,
    src operand is a pointer. */
 
-#define PP_XCHG(s_type, u_type, src) { \
-    u_type _sav = *(u_type *)(dest); \
-    *(u_type *)(dest) = *(u_type *)(src); \
-    *(u_type *)(src) = _sav; \
+#define PP_XCHG(s_type, u_type) { \
+    u_type _sav = *(u_type *)dest; \
+    *(u_type *)dest = *(u_type *)src; \
+    *(u_type *)src = _sav; \
 }
 
 /* Operation that modifies both operands,
    src is a pointer now. */
-#define PP_OPERATION(operation, src) \
-    if      (ins->rex.w)      operation(int64_t, uint64_t, src) \
-    else if (ins->operand_sz) operation(int16_t, uint16_t, src) \
-    else                      operation(int32_t, uint32_t, src)
+#define PP_OPERATION(desttype, srctype, operation) { \
+    GET_OPERAND_SRC_ ## srctype \
+    GET_OPERAND_DEST_ ## desttype \
+    if      (ins->rex.w)      operation(int64_t, uint64_t) \
+    else if (ins->operand_sz) operation(int16_t, uint16_t) \
+    else                      operation(int32_t, uint32_t) \
+}
+
+#define PP_OPERATION_FIXED(desttype, srctype, operation, s_type, u_type) { \
+    GET_OPERAND_SRC_ ## srctype \
+    GET_OPERAND_DEST_ ## desttype \
+    operation(s_type, u_type) \
+}
 
 
 /* XMM/MMX */
-
-
-#define GET_DEST_XMM_SRC_R_M() \
-    void *src  = x64modrm_get_r_m(emu, ins); \
-    void *dest = x64modrm_get_xmm(emu, ins);
-
-#define GET_DEST_XMM_SRC_XMM_M() \
-    void *src  = x64modrm_get_xmm_m(emu, ins); \
-    void *dest = x64modrm_get_xmm(emu, ins);
 
 
 #define DEST_OPERATION_32_64(operation, src64, src32) \
@@ -402,8 +413,9 @@ static inline uint8_t get_byte_parity(uint8_t x) {
 
 
 
-#define OPERATION_32_64(operandtype, operation, ext) { \
-    GET_ ## operandtype() \
+#define OPERATION_32_64(desttype, srctype, operation, ext) { \
+    GET_OPERAND_SRC_ ## srctype \
+    GET_OPERAND_DEST_ ## desttype \
     DEST_OPERATION_32_64_ ## ext(operation, src) \
 }
 
