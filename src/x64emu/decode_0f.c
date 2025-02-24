@@ -25,6 +25,11 @@ bool x64decode_0f(x64emu_t *emu, x64instr_t *ins) {
             x64modrm_fetch(emu, ins);
             break;
 
+        case 0x6E:            /* MOVD/MOVQ mm/xmm,r/m32/64 */
+        case 0x6F:            /* MOVQ/MOVDQA/MOVDQU mm/xmm,mm/m64/xmm/m128 */
+            x64modrm_fetch(emu, ins);
+            break;
+
         case 0x80 ... 0x8F:   /* Jcc rel16/32 */
             if (ins->operand_sz)
                 ins->imm.word[0] = fetch_16(emu, ins);

@@ -10,9 +10,6 @@ enum {
 
 /* macros used to directly access registers internally. */
 
-/* indexed registers */
-#define r_reg64(x) emu->regs[x].qword[0]
-
 /* unsigned */
 
 /* 8-byte registers */

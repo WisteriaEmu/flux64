@@ -77,6 +77,7 @@ static inline void print_emu_state(x64emu_t *emu, x64instr_t *ins, uint64_t rip)
 #endif
 
 void x64emu_run(x64emu_t *emu) {
+    if (!emu) return;
     while (1) {
         x64instr_t instr = { 0 };
 
@@ -93,6 +94,7 @@ void x64emu_run(x64emu_t *emu) {
 }
 
 bool x64emu_free(x64emu_t *emu) {
+    if (!emu) return true;
     if (!x64context_free(emu->ctx))
         return false;
     return true;

@@ -14,7 +14,16 @@ typedef union {
     uint8_t  byte[8];
 } reg64_t;
 
-
+typedef union {
+    int64_t  sqword[2];
+    uint64_t qword[2];
+    int32_t  sdword[4];
+    uint32_t dword[4];
+    int16_t  sword[8];
+    uint16_t word[8];
+    int8_t   sbyte[16];
+    uint8_t  byte[16];
+} reg128_t;
 
 /*typedef union {
     int32_t  sdword[1];

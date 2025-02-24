@@ -253,67 +253,66 @@ static inline uint8_t get_byte_parity(uint8_t x) {
 
 
 /* dest: r/m, src: reg, from ModR/M byte fields. */
-#define GET_DEST_RM_SRC_REG() \
+#define GET_DEST_R_M_SRC_REG() \
     void *src  = x64modrm_get_reg(emu, ins); \
-    void *dest = x64modrm_get_rm(emu, ins);
+    void *dest = x64modrm_get_r_m(emu, ins);
 
 /* dest: reg, src: r/m, from ModR/M byte fields. */
-#define GET_DEST_REG_SRC_RM() \
-    void *src  = x64modrm_get_rm(emu, ins); \
+#define GET_DEST_REG_SRC_R_M() \
+    void *src  = x64modrm_get_r_m(emu, ins); \
     void *dest = x64modrm_get_reg(emu, ins);
 
 
 /* Perform specified operation on dest using src operands. */
-#define DEST_OPERATION(operation, src64, src16, src32) \
+#define DEST_OPERATION_16_32_64(operation, src64, src16, src32) \
     if      (ins->rex.w)      operation(int64_t, uint64_t, src64) \
     else if (ins->operand_sz) operation(int16_t, uint16_t, src16) \
     else                      operation(int32_t, uint32_t, src32)
 
-
 /* Perform signed operation on dest with src operand, always sign-extending.
     NOTE: src is a pointer */
-#define DEST_OPERATION_S_8(operation, src) \
-    DEST_OPERATION(operation, (int64_t)(*(int8_t *)(src)), (int16_t)(*(int8_t *)(src)), (int32_t)(*(int8_t *)(src)))
+#define DEST_OPERATION_16_32_64_S_8(operation, src) \
+    DEST_OPERATION_16_32_64(operation, (int64_t)(*(int8_t *)(src)), (int16_t)(*(int8_t *)(src)), (int32_t)(*(int8_t *)(src)))
 
 
 /* Perform unsigned operation on dest with src operand, always zero-extending.
    NOTE: src is a pointer */
-#define DEST_OPERATION_U_8(operation, src) \
-    DEST_OPERATION(operation, (uint64_t)(*(uint8_t *)(src)), (uint16_t)(*(uint8_t *)(src)), (uint32_t)(*(uint8_t *)(src)))
+#define DEST_OPERATION_16_32_64_U_8(operation, src) \
+    DEST_OPERATION_16_32_64(operation, (uint64_t)(*(uint8_t *)(src)), (uint16_t)(*(uint8_t *)(src)), (uint32_t)(*(uint8_t *)(src)))
 
 
 /* Perform signed operation on dest with src operand, always sign-extending.
     NOTE: src is a pointer */
-#define DEST_OPERATION_S_16(operation, src) \
-    DEST_OPERATION(operation, (int64_t)(*(int16_t *)(src)), *(int16_t *)(src), (int32_t)(*(int16_t *)(src)))
+#define DEST_OPERATION_16_32_64_S_16(operation, src) \
+    DEST_OPERATION_16_32_64(operation, (int64_t)(*(int16_t *)(src)), *(int16_t *)(src), (int32_t)(*(int16_t *)(src)))
 
 
 /* Perform unsigned operation on dest with src operand, always zero-extending.
    NOTE: src is a pointer */
-#define DEST_OPERATION_U_16(operation, src) \
-    DEST_OPERATION(operation, (uint64_t)(*(uint16_t *)(src)), *(uint16_t *)(src), (uint32_t)(*(uint16_t *)(src)))
+#define DEST_OPERATION_16_32_64_U_16(operation, src) \
+    DEST_OPERATION_16_32_64(operation, (uint64_t)(*(uint16_t *)(src)), *(uint16_t *)(src), (uint32_t)(*(uint16_t *)(src)))
 
 
 /* Perform signed operation on dest with src operand, without extension.
    NOTE: src is a pointer */
-#define DEST_OPERATION_S_64(operation, src) \
-    DEST_OPERATION(operation, *(int64_t *)(src), *(int16_t *)(src), *(int32_t *)(src))
+#define DEST_OPERATION_16_32_64_S_64(operation, src) \
+    DEST_OPERATION_16_32_64(operation, *(int64_t *)(src), *(int16_t *)(src), *(int32_t *)(src))
 
 /* Perform unsigned operation on dest with src operand, without extension.
    NOTE: src is a pointer */
-#define DEST_OPERATION_U_64(operation, src) \
-    DEST_OPERATION(operation, *(uint64_t *)(src), *(uint16_t *)(src), *(uint32_t *)(src))
+#define DEST_OPERATION_16_32_64_U_64(operation, src) \
+    DEST_OPERATION_16_32_64(operation, *(uint64_t *)(src), *(uint16_t *)(src), *(uint32_t *)(src))
 
 
 /* Perform signed operation on dest with src operand, sign-extending when 64 bit dest.
    NOTE: src is a pointer */
-#define DEST_OPERATION_S_32(operation, src) \
-    DEST_OPERATION(operation, (int64_t)(*(int32_t *)(src)), *(int16_t *)(src), *(int32_t *)(src))
+#define DEST_OPERATION_16_32_64_S_32(operation, src) \
+    DEST_OPERATION_16_32_64(operation, (int64_t)(*(int32_t *)(src)), *(int16_t *)(src), *(int32_t *)(src))
 
 /* Perform unsigned operation on dest with src operand, zero-extending when 64 bit dest.
    NOTE: src is a pointer */
-#define DEST_OPERATION_U_32(operation, src) \
-    DEST_OPERATION(operation, (uint64_t)(*(uint32_t *)(src)), *(uint16_t *)(src), *(uint32_t *)(src))
+#define DEST_OPERATION_16_32_64_U_32(operation, src) \
+    DEST_OPERATION_16_32_64(operation, (uint64_t)(*(uint32_t *)(src)), *(uint16_t *)(src), *(uint32_t *)(src))
 
 
 /* Combined macros */
@@ -321,7 +320,7 @@ static inline uint8_t get_byte_parity(uint8_t x) {
 /* Operation that uses 16, 32 or 64 bit destination size, and `ext` source operand size. */
 #define OPERATION_16_32_64(operandtype, operation, ext) { \
     GET_ ## operandtype() \
-    DEST_OPERATION_ ## ext(operation, src) \
+    DEST_OPERATION_16_32_64_ ## ext(operation, src) \
 }
 
 /* Operation that uses fixed type of destination and source operands. */
@@ -353,6 +352,60 @@ static inline uint8_t get_byte_parity(uint8_t x) {
     else if (ins->operand_sz) operation(int16_t, uint16_t, src) \
     else                      operation(int32_t, uint32_t, src)
 
+
+/* XMM/MMX */
+
+
+#define GET_DEST_XMM_SRC_R_M() \
+    void *src  = x64modrm_get_r_m(emu, ins); \
+    void *dest = x64modrm_get_xmm(emu, ins);
+
+#define GET_DEST_XMM_SRC_XMM_M() \
+    void *src  = x64modrm_get_xmm_m(emu, ins); \
+    void *dest = x64modrm_get_xmm(emu, ins);
+
+
+#define DEST_OPERATION_32_64(operation, src64, src32) \
+    if (ins->rex.w) operation(int64_t, uint64_t, src64) \
+    else            operation(int32_t, uint32_t, src32)
+
+
+#define DEST_OPERATION_32_64_S_8(operation, src) \
+    DEST_OPERATION_32_64(operation, (int64_t)(*(int8_t *)(src)), (int32_t)(*(int8_t *)(src)))
+
+
+#define DEST_OPERATION_32_64_U_8(operation, src) \
+    DEST_OPERATION_32_64(operation, (uint64_t)(*(uint8_t *)(src)), (uint32_t)(*(uint8_t *)(src)))
+
+
+#define DEST_OPERATION_32_64_S_16(operation, src) \
+    DEST_OPERATION_32_64(operation, (int64_t)(*(int16_t *)(src)), (int32_t)(*(int16_t *)(src)))
+
+
+#define DEST_OPERATION_32_64_U_16(operation, src) \
+    DEST_OPERATION_32_64(operation, (uint64_t)(*(uint16_t *)(src)), (uint32_t)(*(uint16_t *)(src)))
+
+
+#define DEST_OPERATION_32_64_S_32(operation, src) \
+    DEST_OPERATION_32_64(operation, (int64_t)(*(int32_t *)(src)), *(int32_t *)(src))
+
+#define DEST_OPERATION_32_64_U_32(operation, src) \
+    DEST_OPERATION_32_64(operation, (uint64_t)(*(uint32_t *)(src)), *(uint32_t *)(src))
+
+
+#define DEST_OPERATION_32_64_S_64(operation, src) \
+    DEST_OPERATION_32_64(operation, *(int64_t *)(src), *(int32_t *)(src))
+
+#define DEST_OPERATION_32_64_U_64(operation, src) \
+    DEST_OPERATION_32_64(operation, *(uint64_t *)(src), *(uint32_t *)(src))
+
+
+
+
+#define OPERATION_32_64(operandtype, operation, ext) { \
+    GET_ ## operandtype() \
+    DEST_OPERATION_32_64_ ## ext(operation, src) \
+}
 
 
 #include <stdbool.h>

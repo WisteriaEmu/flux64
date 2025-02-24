@@ -25,7 +25,29 @@ bool x64execute_0f(x64emu_t *emu, x64instr_t *ins) {
 
         case 0x40 ... 0x4F:   /* CMOVcc r16/32/64,r/m16/32/64 */
             if (x64execute_jmp_cond(emu, ins, op))
-                OPERATION_16_32_64(DEST_REG_SRC_RM, OP_UNSIGNED_MOV, U_64)
+                OPERATION_16_32_64(DEST_REG_SRC_R_M, OP_UNSIGNED_MOV, U_64)
+            break;
+
+        case 0x6E:            /* MOVD/MOVQ mm/xmm,r/m32/64 */
+            if (ins->operand_sz) {    /* xmm */
+                OPERATION_32_64(DEST_XMM_SRC_R_M, OP_UNSIGNED_MOV, U_64)
+            } else {
+                log_fixme("mmx");
+                return false;
+            }
+            break;
+
+        case 0x6F:            /* MOVQ/MOVDQA/MOVDQU mm/xmm,mm/m64/xmm/m128 */
+            if (ins->operand_sz) {
+                GET_DEST_XMM_SRC_XMM_M()
+                uint64_t *tdest = (uint64_t *)dest;
+                uint64_t *tsrc = (uint64_t *)src;
+                *(tdest++) = *(tsrc++);
+                *tdest = *tsrc;
+            } else {
+                log_fixme("mmx");
+                return false;
+            }
             break;
 
         case 0x80 ... 0x8F:   /* Jcc rel16/32 */
@@ -34,7 +56,7 @@ bool x64execute_0f(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0x90 ... 0x9F: { /* SETcc r/m8 */
-            void *dest = x64modrm_get_rm(emu, ins);
+            void *dest = x64modrm_get_r_m(emu, ins);
             *(uint8_t *)dest = x64execute_jmp_cond(emu, ins, op) ? 1 : 0;
             break;
         }
@@ -45,11 +67,11 @@ bool x64execute_0f(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0xB6:            /* MOVZX r16/32/64,r/m8 */
-            OPERATION_16_32_64(DEST_REG_SRC_RM, OP_UNSIGNED_MOV, U_8)
+            OPERATION_16_32_64(DEST_REG_SRC_R_M, OP_UNSIGNED_MOV, U_8)
             break;
 
         case 0xB7:            /* MOVZX r16/32/64,r/m16 */
-            OPERATION_16_32_64(DEST_REG_SRC_RM, OP_UNSIGNED_MOV, U_16)
+            OPERATION_16_32_64(DEST_REG_SRC_R_M, OP_UNSIGNED_MOV, U_16)
             break;
 
         default:
