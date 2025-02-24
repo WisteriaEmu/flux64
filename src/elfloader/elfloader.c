@@ -137,20 +137,28 @@ static bool load_program_headers(x64context_t *ctx, FILE *fd, Elf64_Ehdr *ehdr) 
                we will load the segment directly at aligned offset to aligned address */
 
             Elf64_Addr  aligned_addr = ph->p_vaddr & ~(ph->p_align - 1);
-            Elf64_Off   aligned_offs = ph->p_offset & ~(ph->p_align - 1);
+            //Elf64_Off   aligned_offs = ph->p_offset & ~(ph->p_align - 1);
             Elf64_Addr  align_offset = ph->p_vaddr - aligned_addr;
             Elf64_Xword aligned_size = ph->p_memsz + align_offset;
 
             int prot = p_flags_to_prot(ph->p_flags);
 
-            log_dump("Mapping segment to 0x%llx-0x%llx, offset 0x%llx",
-                        aligned_addr, aligned_addr + aligned_size, aligned_offs);
+            log_dump("Mapping segment 0x%llx-0x%llx, aligned to 0x%llx-0x%llx, offset 0x%llx",
+                        ph->p_vaddr, ph->p_vaddr + ph->p_memsz,
+                        aligned_addr, aligned_addr + aligned_size, ph->p_offset);
 
             void *ret = mmap((void *)aligned_addr, aligned_size,
-                PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_FIXED, fileno(fd), aligned_offs);
+                PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS, -1, 0);
 
             if (ret == MAP_FAILED) {
                 log_err("Failed to map segment: %s", strerror(errno));
+                return false;
+            }
+
+            if (fseek(fd, ph->p_offset, SEEK_SET) == -1 ||
+                fread(ret, ph->p_memsz, 1, fd) != 1)
+            {
+                log_err("Failed to read segment");
                 return false;
             }
 
