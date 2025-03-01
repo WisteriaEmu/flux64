@@ -122,8 +122,8 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
 
         OPCODE_FAMILY(0x00)   /* 00..05 ADD */
         OPCODE_FAMILY(0x08)   /* 08..0D OR */
-        /* ADC */
-        /* SBB */
+        OPCODE_FAMILY(0x10)   /* 10..15 ADC */
+        OPCODE_FAMILY(0x18)   /* 18..1D SBB */
         OPCODE_FAMILY(0x20)   /* 20..25 AND */
         OPCODE_FAMILY(0x28)   /* 28..2D SUB */
         OPCODE_FAMILY(0x30)   /* 30..35 XOR */

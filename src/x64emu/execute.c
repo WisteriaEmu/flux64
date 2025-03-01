@@ -26,36 +26,21 @@ SET_DEBUG_CHANNEL("X64EXECUTE")
 
 static inline bool x64execute_80(x64emu_t *emu, x64instr_t *ins) {
 #define CASE_OP(x, oper) case x: OPERATION_FIXED_S(R_M, IMM, oper, int8_t, uint8_t) break;
-    switch (ins->modrm.reg) {
-        OPCODE_EXT_CASE(CASE_OP)
-        default:
-            log_err("Unimplemented opcode 80 extension %X", ins->modrm.reg);
-            return false;
-    }
+    switch (ins->modrm.reg) { OPCODE_EXT_CASE(CASE_OP) }
 #undef CASE_OP
     return true;
 }
 
 static inline bool x64execute_81(x64emu_t *emu, x64instr_t *ins) {
 #define CASE_OP(x, oper) case x: OPERATION_16_32_64(R_M, IMM, oper, S_32) break;
-    switch (ins->modrm.reg) {
-        OPCODE_EXT_CASE(CASE_OP)
-        default:
-            log_err("Unimplemented opcode 81 extension %X", ins->modrm.reg);
-            return false;
-    }
+    switch (ins->modrm.reg) { OPCODE_EXT_CASE(CASE_OP) }
 #undef CASE_OP
     return true;
 }
 
 static inline bool x64execute_83(x64emu_t *emu, x64instr_t *ins) {
 #define CASE_OP(x, oper) case x: OPERATION_16_32_64(R_M, IMM, oper, S_8) break;
-    switch (ins->modrm.reg) {
-        OPCODE_EXT_CASE(CASE_OP)
-        default:
-            log_err("Unimplemented opcode 83 extension %X", ins->modrm.reg);
-            return false;
-    }
+    switch (ins->modrm.reg) { OPCODE_EXT_CASE(CASE_OP) }
 #undef CASE_OP
     return true;
 }
