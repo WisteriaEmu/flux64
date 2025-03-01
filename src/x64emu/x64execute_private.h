@@ -18,9 +18,6 @@ static inline uint8_t get_byte_parity(uint8_t x) {
     f_ZF = (x) == 0; \
     f_PF = get_byte_parity(x);
 
-
-
-
 /* when shift = 0, no flags are affected. */
 /* CF (for shift > 0) is set to the last bit shifted out,
    OF (for shift = 1) to CF xor result MSB. */
@@ -123,7 +120,6 @@ static inline uint8_t get_byte_parity(uint8_t x) {
 
 
 
-/* Perform bitwise operation and update flags. */
 /* NOTE: state of AF is undefined. */
 #define OP_BITWISE_IMPL(oper, s_type, u_type, operand) { \
     *(s_type *)dest oper ## = (operand); \
@@ -139,30 +135,30 @@ static inline uint8_t get_byte_parity(uint8_t x) {
 }
 
 
-/* `*dest ^= operand`, update flags. */
+/* `*dest ^= operand`, updates ZF, PF, SF, operands are signed. */
 #define OP_BITWISE_XOR(s_type, u_type, operand) \
     OP_BITWISE_IMPL(^, s_type, u_type, operand)
 
 
-/* `*dest &= operand`, update flags. */
+/* `*dest &= operand`, updates ZF, PF, SF, operands are signed. */
 #define OP_BITWISE_AND(s_type, u_type, operand) \
     OP_BITWISE_IMPL(&, s_type, u_type, operand)
 
 
-/* Same as AND, but discarding result. */
+/* Update ZF, PF, SF with result of `*dest & operand`, operands are signed. */
 #define OP_BITWISE_TEST_AND(s_type, u_type, operand) \
     OP_BITWISE_TEST_IMPL(&, s_type, u_type, operand)
 
 
-/* `*dest |= operand`, update flags. */
+/* `*dest |= operand`, updates ZF, PF, SF, operands are signed. */
 #define OP_BITWISE_OR(s_type, u_type, operand) \
     OP_BITWISE_IMPL(|, s_type, u_type, operand)
 
-
+/* `*dest = ~(*dest)` */
 #define OP_BITWISE_NOT(s_type, u_type, operand) \
     *(s_type *)dest = ~(*(s_type *)dest);
 
-
+/* `*dest = -(*dest)`, signed. */
 #define OP_SIGNED_NEG(s_type, u_type, operand) \
     *(s_type *)dest = -(*(s_type *)dest);
 
@@ -174,24 +170,44 @@ static inline uint8_t get_byte_parity(uint8_t x) {
     /* CF is set in other macro */ \
     f_AF = (uint8_t)_res < (uint8_t)_sav; \
     f_OF = ((operand) <  0 && _sav <  0 && _res >= 0) || \
-            ((operand) >= 0 && _sav >= 0 && _res <  0);
+           ((operand) >= 0 && _sav >= 0 && _res <  0);
 
 
-/* `*dest += operand`, update flags.
-   CF, AF as unsigned, OF as signed.
-   operand should be signed type. */
+/* `*dest += operand`, updates AF, OF, CF, ZF, PF, SF, operands are signed. */
 #define OP_SIGNED_ADD(s_type, u_type, operand) { \
     OP_SIGNED_ADD_IMPL(s_type, u_type, operand) \
     f_CF = (u_type)_res < (u_type)_sav; \
     *(s_type *)dest = _res; \
 }
 
-/* Same as add, but preserves CF. */
+/* `*dest += operand`, updates AF, OF, ZF, PF, SF, operands are signed. */
 #define OP_SIGNED_INC(s_type, u_type, operand) { \
     OP_SIGNED_ADD_IMPL(s_type, u_type, operand) \
     *(s_type *)dest = _res; \
 }
 
+/* Probably bad. */
+
+/* `*dest += CF + operand`, updates AF, OF, CF, ZF, PF, SF, operands are signed. */
+#define OP_SIGNED_ADC(s_type, u_type, operand) { \
+    s_type _sav; \
+    s_type _res; \
+    if (f_CF) { \
+        _sav = *(s_type *)dest; \
+        _res = _sav + 1; \
+        f_CF = (u_type)_res < (u_type)_sav; \
+        f_AF = (uint8_t)_res < (uint8_t)_sav; \
+        f_OF = _sav >= 0 && _res < 0; \
+    } \
+    _sav = *(s_type *)dest; \
+    _res = _sav + (operand); \
+    SET_RESULT_FLAGS(_res) \
+    f_CF |= (u_type)_res < (u_type)_sav; \
+    f_AF |= (uint8_t)_res < (uint8_t)_sav; \
+    f_OF |= ((operand) <  0 && _sav <  0 && _res >= 0) || \
+            ((operand) >= 0 && _sav >= 0 && _res <  0); \
+    *(s_type *)dest = _res; \
+}
 
 
 #define OP_SIGNED_CMP_IMPL(s_type, u_type, operand) \
@@ -204,30 +220,45 @@ static inline uint8_t get_byte_parity(uint8_t x) {
            ((operand) <  0 && _sav >= 0 && _res <  0);
 
 
-/* Same as SUB, but discarding result. */
+/* Updates AF, OF, CF, ZF, SF, PF with result of `*dest - operand`. */
 #define OP_SIGNED_CMP(s_type, u_type, operand) { \
     OP_SIGNED_CMP_IMPL(s_type, u_type, operand) \
     f_CF = (u_type)_res > (u_type)_sav; \
 }
 
-
-/* `*dest -= operand`, update flags.
-   CF, AF as unsigned, OF as signed.
-   operand should be signed type. */
+/* `*dest -= operand`, updates AF, OF, CF, ZF, SF, PF. */
 #define OP_SIGNED_SUB(s_type, u_type, operand) { \
     OP_SIGNED_CMP_IMPL(s_type, u_type, operand) \
     f_CF = (u_type)_res > (u_type)_sav; \
     *(s_type *)dest = _res; \
 }
 
-/* Same as sub, but preserves CF. */
+/* `*dest -= operand`, updates AF, OF, ZF, SF, PF. */
 #define OP_SIGNED_DEC(s_type, u_type, operand) { \
     OP_SIGNED_CMP_IMPL(s_type, u_type, operand) \
     *(s_type *)dest = _res; \
 }
 
-
-
+/* `*dest -= CF + operand`, updates AF, OF, CF, ZF, PF, SF, operands are signed. */
+#define OP_SIGNED_SBB(s_type, u_type, operand) { \
+    s_type _sav; \
+    s_type _res; \
+    if (f_CF) { \
+        _sav = *(s_type *)dest; \
+        _res = _sav - 1; \
+        f_CF = (u_type)_res > (u_type)_sav; \
+        f_AF = (uint8_t)_res > (uint8_t)_sav; \
+        f_OF = _sav <  0 && _res >= 0; \
+    } \
+    _sav = *(s_type *)dest; \
+    _res = _sav - (operand); \
+    SET_RESULT_FLAGS(_res) \
+    f_CF |= (u_type)_res > (u_type)_sav; \
+    f_AF |= (uint8_t)_res > (uint8_t)_sav; \
+    f_OF |= ((operand) >= 0 && _sav <  0 && _res >= 0) || \
+           ((operand) <  0 && _sav >= 0 && _res <  0); \
+    *(s_type *)dest = _res; \
+}
 
 /* `*dest = operand` */
 #define OP_SIGNED_MOV(s_type, u_type, operand) { \
@@ -277,55 +308,36 @@ static inline uint8_t get_byte_parity(uint8_t x) {
     else if (ins->operand_sz) operation(int16_t, uint16_t, src16) \
     else                      operation(int32_t, uint32_t, src32)
 
-/* Perform signed operation on dest with src operand, always sign-extending.
-    NOTE: src is a pointer */
+/* Perform signed operation on dest with src operand, sign extending when needed. */
 #define DEST_OPERATION_16_32_64_S_8(operation, src) \
     DEST_OPERATION_16_32_64(operation, (int64_t)(*(int8_t *)(src)), (int16_t)(*(int8_t *)(src)), (int32_t)(*(int8_t *)(src)))
 
-
-/* Perform unsigned operation on dest with src operand, always zero-extending.
-   NOTE: src is a pointer */
-#define DEST_OPERATION_16_32_64_U_8(operation, src) \
-    DEST_OPERATION_16_32_64(operation, (uint64_t)(*(uint8_t *)(src)), (uint16_t)(*(uint8_t *)(src)), (uint32_t)(*(uint8_t *)(src)))
-
-
-/* Perform signed operation on dest with src operand, always sign-extending.
-    NOTE: src is a pointer */
 #define DEST_OPERATION_16_32_64_S_16(operation, src) \
     DEST_OPERATION_16_32_64(operation, (int64_t)(*(int16_t *)(src)), *(int16_t *)(src), (int32_t)(*(int16_t *)(src)))
 
-
-/* Perform unsigned operation on dest with src operand, always zero-extending.
-   NOTE: src is a pointer */
-#define DEST_OPERATION_16_32_64_U_16(operation, src) \
-    DEST_OPERATION_16_32_64(operation, (uint64_t)(*(uint16_t *)(src)), *(uint16_t *)(src), (uint32_t)(*(uint16_t *)(src)))
-
-
-/* Perform signed operation on dest with src operand, without extension.
-   NOTE: src is a pointer */
-#define DEST_OPERATION_16_32_64_S_64(operation, src) \
-    DEST_OPERATION_16_32_64(operation, *(int64_t *)(src), *(int16_t *)(src), *(int32_t *)(src))
-
-/* Perform unsigned operation on dest with src operand, without extension.
-   NOTE: src is a pointer */
-#define DEST_OPERATION_16_32_64_U_64(operation, src) \
-    DEST_OPERATION_16_32_64(operation, *(uint64_t *)(src), *(uint16_t *)(src), *(uint32_t *)(src))
-
-
-/* Perform signed operation on dest with src operand, sign-extending when 64 bit dest.
-   NOTE: src is a pointer */
 #define DEST_OPERATION_16_32_64_S_32(operation, src) \
     DEST_OPERATION_16_32_64(operation, (int64_t)(*(int32_t *)(src)), *(int16_t *)(src), *(int32_t *)(src))
 
-/* Perform unsigned operation on dest with src operand, zero-extending when 64 bit dest.
-   NOTE: src is a pointer */
+#define DEST_OPERATION_16_32_64_S_64(operation, src) \
+    DEST_OPERATION_16_32_64(operation, *(int64_t *)(src), *(int16_t *)(src), *(int32_t *)(src))
+
+/* Perform unsigned operation on dest with src operand, zero-extending when needed. */
+#define DEST_OPERATION_16_32_64_U_8(operation, src) \
+    DEST_OPERATION_16_32_64(operation, (uint64_t)(*(uint8_t *)(src)), (uint16_t)(*(uint8_t *)(src)), (uint32_t)(*(uint8_t *)(src)))
+
+#define DEST_OPERATION_16_32_64_U_16(operation, src) \
+    DEST_OPERATION_16_32_64(operation, (uint64_t)(*(uint16_t *)(src)), *(uint16_t *)(src), (uint32_t)(*(uint16_t *)(src)))
+
+#define DEST_OPERATION_16_32_64_U_64(operation, src) \
+    DEST_OPERATION_16_32_64(operation, *(uint64_t *)(src), *(uint16_t *)(src), *(uint32_t *)(src))
+
 #define DEST_OPERATION_16_32_64_U_32(operation, src) \
     DEST_OPERATION_16_32_64(operation, (uint64_t)(*(uint32_t *)(src)), *(uint16_t *)(src), *(uint32_t *)(src))
 
 
 /* Combined macros */
 
-/* Operation that uses 16, 32 or 64 bit destination size, and `ext` source operand size. */
+/* Operation that uses 16, 32 or 64 bit destination size, and `ext` source operand type. */
 #define OPERATION_16_32_64(desttype, srctype, operation, ext) { \
     GET_OPERAND_SRC_ ## srctype \
     GET_OPERAND_DEST_ ## desttype \
@@ -356,8 +368,6 @@ static inline uint8_t get_byte_parity(uint8_t x) {
     *(u_type *)src = _sav; \
 }
 
-/* Operation that modifies both operands,
-   src is a pointer now. */
 #define PP_OPERATION(desttype, srctype, operation) { \
     GET_OPERAND_SRC_ ## srctype \
     GET_OPERAND_DEST_ ## desttype \
@@ -384,33 +394,26 @@ static inline uint8_t get_byte_parity(uint8_t x) {
 #define DEST_OPERATION_32_64_S_8(operation, src) \
     DEST_OPERATION_32_64(operation, (int64_t)(*(int8_t *)(src)), (int32_t)(*(int8_t *)(src)))
 
-
-#define DEST_OPERATION_32_64_U_8(operation, src) \
-    DEST_OPERATION_32_64(operation, (uint64_t)(*(uint8_t *)(src)), (uint32_t)(*(uint8_t *)(src)))
-
-
 #define DEST_OPERATION_32_64_S_16(operation, src) \
     DEST_OPERATION_32_64(operation, (int64_t)(*(int16_t *)(src)), (int32_t)(*(int16_t *)(src)))
-
-
-#define DEST_OPERATION_32_64_U_16(operation, src) \
-    DEST_OPERATION_32_64(operation, (uint64_t)(*(uint16_t *)(src)), (uint32_t)(*(uint16_t *)(src)))
-
 
 #define DEST_OPERATION_32_64_S_32(operation, src) \
     DEST_OPERATION_32_64(operation, (int64_t)(*(int32_t *)(src)), *(int32_t *)(src))
 
-#define DEST_OPERATION_32_64_U_32(operation, src) \
-    DEST_OPERATION_32_64(operation, (uint64_t)(*(uint32_t *)(src)), *(uint32_t *)(src))
-
-
 #define DEST_OPERATION_32_64_S_64(operation, src) \
     DEST_OPERATION_32_64(operation, *(int64_t *)(src), *(int32_t *)(src))
 
+#define DEST_OPERATION_32_64_U_8(operation, src) \
+    DEST_OPERATION_32_64(operation, (uint64_t)(*(uint8_t *)(src)), (uint32_t)(*(uint8_t *)(src)))
+
+#define DEST_OPERATION_32_64_U_16(operation, src) \
+    DEST_OPERATION_32_64(operation, (uint64_t)(*(uint16_t *)(src)), (uint32_t)(*(uint16_t *)(src)))
+
+#define DEST_OPERATION_32_64_U_32(operation, src) \
+    DEST_OPERATION_32_64(operation, (uint64_t)(*(uint32_t *)(src)), *(uint32_t *)(src))
+
 #define DEST_OPERATION_32_64_U_64(operation, src) \
     DEST_OPERATION_32_64(operation, *(uint64_t *)(src), *(uint32_t *)(src))
-
-
 
 
 #define OPERATION_32_64(desttype, srctype, operation, ext) { \

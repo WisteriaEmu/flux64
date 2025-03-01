@@ -16,8 +16,8 @@ SET_DEBUG_CHANNEL("X64EXECUTE")
 #define OPCODE_EXT_CASE(case_op) \
     case_op(0x0, OP_SIGNED_ADD) \
     case_op(0x1, OP_BITWISE_OR) \
-    /* ADC */ \
-    /* SBB */ \
+    case_op(0x2, OP_SIGNED_ADC) \
+    case_op(0x3, OP_SIGNED_SBB) \
     case_op(0x4, OP_BITWISE_AND) \
     case_op(0x5, OP_SIGNED_SUB) \
     case_op(0x6, OP_BITWISE_XOR) \
@@ -271,8 +271,8 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
 
         OPCODE_FAMILY(0x00, OP_SIGNED_ADD)    /* 00..05 ADD */
         OPCODE_FAMILY(0x08, OP_BITWISE_OR)    /* 08..0D OR */
-        /* ADC */
-        /* SBB */
+        OPCODE_FAMILY(0x10, OP_SIGNED_ADC)    /* 10..15 ADC */
+        OPCODE_FAMILY(0x18, OP_SIGNED_SBB)    /* 18..1D SBB */
         OPCODE_FAMILY(0x20, OP_BITWISE_AND)   /* 20..25 AND */
         OPCODE_FAMILY(0x28, OP_SIGNED_SUB)    /* 28..2D SUB */
         OPCODE_FAMILY(0x30, OP_BITWISE_XOR)   /* 30..35 XOR */
