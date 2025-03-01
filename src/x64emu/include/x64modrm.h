@@ -11,6 +11,9 @@
  */
 void x64modrm_fetch(x64emu_t *emu, x64instr_t *ins);
 
+/* Get memory address. */
+void *x64modrm_get_indirect(x64emu_t *emu, x64instr_t *ins);
+
 /** Address of general purpose register encoded using ModR/M byte. */
 void *x64modrm_get_reg(x64emu_t *emu, x64instr_t *ins);
 

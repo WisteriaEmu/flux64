@@ -63,7 +63,7 @@ static inline uint64_t get_base_rm(x64emu_t *emu, x64instr_t *ins) {
     return emu->regs[ins->modrm.rm | (ins->rex.b << 3)].qword[0];
 }
 
-void *get_indirect_rm(x64emu_t *emu, x64instr_t *ins) {
+void *x64modrm_get_indirect(x64emu_t *emu, x64instr_t *ins) {
     if (ins->address_sz) {
         log_err("32 bit addressing ModR/M still not covered.");
         return NULL;
@@ -95,12 +95,12 @@ void *x64modrm_get_r_m(x64emu_t *emu, x64instr_t *ins) {
     if (ins->modrm.mod == 3)
         return emu->regs + (ins->modrm.rm | (ins->rex.b << 3));
 
-    return get_indirect_rm(emu, ins);
+    return x64modrm_get_indirect(emu, ins);
 }
 
 void *x64modrm_get_xmm_m(x64emu_t *emu, x64instr_t *ins) {
     if (ins->modrm.mod == 3)
         return emu->xmm + (ins->modrm.rm | (ins->rex.b << 3));
 
-    return get_indirect_rm(emu, ins);
+    return x64modrm_get_indirect(emu, ins);
 }

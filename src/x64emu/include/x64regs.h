@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 
+typedef __int128_t  int128_t;
+typedef __uint128_t uint128_t;
+
 typedef union {
     int64_t  sqword[1];
     uint64_t qword[1];
@@ -15,14 +18,16 @@ typedef union {
 } reg64_t;
 
 typedef union {
-    int64_t  sqword[2];
-    uint64_t qword[2];
-    int32_t  sdword[4];
-    uint32_t dword[4];
-    int16_t  sword[8];
-    uint16_t word[8];
-    int8_t   sbyte[16];
-    uint8_t  byte[16];
+    int128_t  soword[1];
+    uint128_t oword[1];
+    int64_t   sqword[2];
+    uint64_t  qword[2];
+    int32_t   sdword[4];
+    uint32_t  dword[4];
+    int16_t   sword[8];
+    uint16_t  word[8];
+    int8_t    sbyte[16];
+    uint8_t   byte[16];
 } reg128_t;
 
 /*typedef union {

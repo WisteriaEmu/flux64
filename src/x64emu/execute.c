@@ -373,6 +373,7 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0x8D: {          /* LEA r16/32/64,m */
+            /* FIXME: this is not r/m... */
             /* avoiding warning. */
             uintptr_t src = (uintptr_t)x64modrm_get_r_m(emu, ins);
             void *dest = x64modrm_get_reg(emu, ins);
