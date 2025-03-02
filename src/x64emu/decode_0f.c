@@ -1,18 +1,17 @@
-#ifndef __X64DECODE_0F_H_
-#define __X64DECODE_0F_H_
-
 #include <stdbool.h>
 #include <stdint.h>
 
 #include "debug.h"
 #include "x64emu.h"
 #include "x64instr.h"
+#include "x64modrm.h"
 
-#include "modrm.h"
 #include "regs_private.h"
 #include "decode_private.h"
 
-static inline bool x64decode_0f(x64emu_t *emu, x64instr_t *ins) {
+SET_DEBUG_CHANNEL("X64DECODE_0F")
+
+bool x64decode_0f(x64emu_t *emu, x64instr_t *ins) {
     ins->opcode[1] = fetch_8(emu, ins);
 
     switch (ins->opcode[1]) {
@@ -71,5 +70,3 @@ static inline bool x64decode_0f(x64emu_t *emu, x64instr_t *ins) {
     }
     return true;
 }
-
-#endif /* __X64DECODE_0F_H */

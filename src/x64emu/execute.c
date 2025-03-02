@@ -1,6 +1,3 @@
-#ifndef __X64EXECUTE_H_
-#define __X64EXECUTE_H_
-
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -8,13 +5,14 @@
 #include "debug.h"
 #include "x64instr.h"
 #include "x64emu.h"
+#include "x64modrm.h"
 
 #include "regs_private.h"
 #include "flags_private.h"
 #include "stack_private.h"
-#include "execute_0f.h"
 #include "execute_private.h"
-#include "modrm.h"
+
+SET_DEBUG_CHANNEL("X64EXECUTE")
 
 #define OPCODE_EXT_CASE(case_op) \
     case 0: case_op(OP_S_ADD) break; \
@@ -230,7 +228,7 @@ static inline bool x64execute_ff(x64emu_t *emu, x64instr_t *ins) {
 }
 
 
-static inline bool x64execute(x64emu_t *emu, x64instr_t *ins) {
+bool x64execute(x64emu_t *emu, x64instr_t *ins) {
     uint8_t op = ins->opcode[0];
 
     switch (op) {
@@ -575,5 +573,3 @@ static inline bool x64execute(x64emu_t *emu, x64instr_t *ins) {
 
     return true;
 }
-
-#endif /* __X64EXECUTE_H_ */

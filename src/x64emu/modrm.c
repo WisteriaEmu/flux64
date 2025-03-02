@@ -1,16 +1,16 @@
-#ifndef __X64MODRM_H_
-#define __X64MODRM_H_
-
 #include <stdint.h>
 #include <stdbool.h>
 
 #include "debug.h"
 #include "x64emu.h"
 #include "x64instr.h"
+#include "x64modrm.h"
 
 #include "regs_private.h"
 
-static inline void x64modrm_fetch(x64emu_t *emu, x64instr_t *ins) {
+SET_DEBUG_CHANNEL("X64MODRM")
+
+void x64modrm_fetch(x64emu_t *emu, x64instr_t *ins) {
     ins->modrm.byte = fetch_8(emu, ins);
 
     /* 11 - Register-direct addressing mode. */
@@ -33,15 +33,15 @@ static inline void x64modrm_fetch(x64emu_t *emu, x64instr_t *ins) {
     }
 }
 
-static inline void *x64modrm_get_reg(x64emu_t *emu, x64instr_t *ins) {
+void *x64modrm_get_reg(x64emu_t *emu, x64instr_t *ins) {
     return emu->regs + (ins->modrm.reg | (ins->rex.r << 3));
 }
 
-static inline void *x64modrm_get_xmm(x64emu_t *emu, x64instr_t *ins) {
+void *x64modrm_get_xmm(x64emu_t *emu, x64instr_t *ins) {
     return emu->xmm + (ins->modrm.reg | (ins->rex.r << 3));
 }
 
-static inline void *x64modrm_get_mmx(x64emu_t *emu, x64instr_t *ins) {
+void *x64modrm_get_mmx(x64emu_t *emu, x64instr_t *ins) {
     return emu->mmx + (ins->modrm.reg | (ins->rex.r << 3));
 }
 
@@ -68,7 +68,7 @@ static inline uint64_t x64modrm_get_base_rm(x64emu_t *emu, x64instr_t *ins) {
     return emu->regs[ins->modrm.rm | (ins->rex.b << 3)].uq[0];
 }
 
-static inline void *x64modrm_get_indirect(x64emu_t *emu, x64instr_t *ins) {
+void *x64modrm_get_indirect(x64emu_t *emu, x64instr_t *ins) {
     if (ins->address_sz) {
         log_err("32 bit addressing ModR/M still not covered.");
         return NULL;
@@ -96,25 +96,23 @@ static inline void *x64modrm_get_indirect(x64emu_t *emu, x64instr_t *ins) {
     return NULL;
 }
 
-static inline void *x64modrm_get_r_m(x64emu_t *emu, x64instr_t *ins) {
+void *x64modrm_get_r_m(x64emu_t *emu, x64instr_t *ins) {
     if (ins->modrm.mod == 3)
         return emu->regs + (ins->modrm.rm | (ins->rex.b << 3));
 
     return x64modrm_get_indirect(emu, ins);
 }
 
-static inline void *x64modrm_get_xmm_m(x64emu_t *emu, x64instr_t *ins) {
+void *x64modrm_get_xmm_m(x64emu_t *emu, x64instr_t *ins) {
     if (ins->modrm.mod == 3)
         return emu->xmm + (ins->modrm.rm | (ins->rex.b << 3));
 
     return x64modrm_get_indirect(emu, ins);
 }
 
-static inline void *x64modrm_get_mmx_m(x64emu_t *emu, x64instr_t *ins) {
+void *x64modrm_get_mmx_m(x64emu_t *emu, x64instr_t *ins) {
     if (ins->modrm.mod == 3)
         return emu->mmx + (ins->modrm.rm | (ins->rex.b << 3));
 
     return x64modrm_get_indirect(emu, ins);
 }
-
-#endif /* __X64MODRM_H_ */

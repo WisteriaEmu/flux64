@@ -1,17 +1,15 @@
-#ifndef __X64DECODE_H_
-#define __X64DECODE_H_
-
 #include <stdint.h>
 #include <stdbool.h>
 
 #include "debug.h"
 #include "x64instr.h"
 #include "x64emu.h"
+#include "x64modrm.h"
 
-#include "modrm.h"
 #include "regs_private.h"
 #include "decode_private.h"
-#include "decode_0f.h"
+
+SET_DEBUG_CHANNEL("X64DECODE")
 
 #ifdef HAVE_TRACE
 uint8_t fetch_8(x64emu_t *emu, x64instr_t *ins) {
@@ -84,7 +82,7 @@ static inline uint8_t decode_prefixes(x64emu_t *emu, x64instr_t *ins) {
     }
 }
 
-static inline bool x64decode(x64emu_t *emu, x64instr_t *ins) {
+bool x64decode(x64emu_t *emu, x64instr_t *ins) {
     ins->opcode[0] = decode_prefixes(emu, ins);
 
     /* During decoding our goal is to map instruction bytes
@@ -266,5 +264,3 @@ static inline bool x64decode(x64emu_t *emu, x64instr_t *ins) {
 
     return true;
 }
-
-#endif /* __X64DECODE_H_ */

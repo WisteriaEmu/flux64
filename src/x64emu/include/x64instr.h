@@ -101,4 +101,16 @@ uint64_t fetch_64(x64emu_t *emu, x64instr_t *ins);
 #define fetch_64(emu, ins) (*(uint64_t *)(r_rip += 8, r_rip - 8))
 #endif
 
+/** Execute decoded instruction. */
+bool x64execute(x64emu_t *emu, x64instr_t *ins);
+
+bool x64execute_0f(x64emu_t *emu, x64instr_t *ins);
+
+/** Fetch instruction. */
+bool x64decode(x64emu_t *emu, x64instr_t *ins);
+
+bool x64decode_0f(x64emu_t *emu, x64instr_t *ins);
+
+bool x64syscall(x64emu_t *emu);
+
 #endif /* __X64INSTR_H_ */
