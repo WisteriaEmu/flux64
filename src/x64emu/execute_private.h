@@ -1,4 +1,3 @@
-
 #ifndef __X64EXECUTE_PRIVATE_H_
 #define __X64EXECUTE_PRIVATE_H_
 
@@ -417,7 +416,8 @@ static inline uint8_t get_byte_parity(uint8_t x) {
 
 #include "x64emu.h"
 #include "x64instr.h"
-#include "x64flags_private.h"
+
+#include "flags_private.h"
 
 static inline bool x64execute_jmp_cond(x64emu_t *emu, x64instr_t *ins, uint8_t op) {
     bool ret = false;

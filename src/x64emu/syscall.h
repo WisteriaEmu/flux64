@@ -1,15 +1,17 @@
+#ifndef __X64SYSCALL_H_
+#define __X64SYSCALL_H_
 
+#include <stdint.h>
 #include <stdbool.h>
 #include <unistd.h>
 #include <errno.h>
 
 #include "debug.h"
 #include "x64emu.h"
-#include "x64regs_private.h"
 
-SET_DEBUG_CHANNEL("X64SYSCALL")
+#include "regs_private.h"
 
-bool x64syscall(x64emu_t *emu) {
+static inline bool x64syscall(x64emu_t *emu) {
     /* The syscall is determined by rax, arguments are passed through
        rdi, rsi, rdx, r10, r8 and r9 registers accordingly. */
 
@@ -38,3 +40,5 @@ bool x64syscall(x64emu_t *emu) {
     }
     return true;
 }
+
+#endif /* __X64SYSCALL_H_ */

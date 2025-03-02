@@ -35,10 +35,4 @@ void x64emu_run(x64emu_t *emu);
  */
 bool x64emu_free(x64emu_t *emu);
 
-/**
- * Run emulated syscall described with registers
- * rax, rdi, rsi, rdx, r10, r8 and r9.
- */
-bool x64syscall(x64emu_t *emu);
-
 #endif /* __X64EMU_H_ */

@@ -1,68 +1,21 @@
 #include <stdbool.h>
+#include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
 #include <sys/mman.h>
-#include <sys/auxv.h>
-#include <stdint.h>
 
 #include "debug.h"
 #include "x64context.h"
 #include "x64emu.h"
 #include "x64stack.h"
-#include "x64regs_private.h"
 #include "virtual.h"
 
+#include "regs_private.h"
+#include "stack_private.h"
+
 SET_DEBUG_CHANNEL("X64STACK");
-
-/* stack operations */
-
-void push_16(x64emu_t *emu, uint16_t v) {
-    *(uint16_t *)(r_rsp -= 2) = v;
-}
-
-void push_32(x64emu_t *emu, uint32_t v) {
-    *(uint32_t *)(r_rsp -= 4) = v;
-}
-
-void push_64(x64emu_t *emu, uint64_t v) {
-    *(uint64_t *)(r_rsp -= 8) = v;
-}
-
-void push_auxv(x64emu_t *emu, uint64_t v, uint64_t t) {
-    push_64(emu, v);
-    push_64(emu, t);
-}
-
-void push_real_auxv(x64emu_t *emu, uint64_t t) {
-    uint64_t v = getauxval(t);
-    if (errno != ENOENT) push_auxv(emu, v, t);
-}
-
-void push_align(x64emu_t *emu) {
-    uint64_t aligned = r_rsp & ~(emu->ctx->stack.align - 1);
-    memset((void *)aligned, 0, r_rsp - aligned);
-    r_rsp = aligned;
-}
-
-void push_string(x64emu_t *emu, const char *str) {
-    int size = strlen(str) + 1; // NULL-terminated size
-    r_rsp -= size;
-    memcpy((void *)r_rsp, str, size);
-}
-
-uint16_t pop_16(x64emu_t *emu) {
-    return *(uint16_t *)(r_rsp += 2, r_rsp - 2);
-}
-
-uint32_t pop_32(x64emu_t *emu) {
-    return *(uint32_t *)(r_rsp += 4, r_rsp - 4);
-}
-
-uint64_t pop_64(x64emu_t *emu) {
-    return *(uint64_t *)(r_rsp += 8, r_rsp - 8);
-}
 
 // address such that the native side has more than enough space above
 // (so that overlaps and overflows do not happen).

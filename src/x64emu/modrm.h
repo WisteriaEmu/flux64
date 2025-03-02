@@ -1,15 +1,16 @@
+#ifndef __X64MODRM_H_
+#define __X64MODRM_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "debug.h"
 #include "x64emu.h"
 #include "x64instr.h"
-#include "x64modrm.h"
-#include "x64regs_private.h"
 
-SET_DEBUG_CHANNEL("X64MODRM")
+#include "regs_private.h"
 
-void x64modrm_fetch(x64emu_t *emu, x64instr_t *ins) {
+static inline void x64modrm_fetch(x64emu_t *emu, x64instr_t *ins) {
     ins->modrm.byte = fetch_8(emu, ins);
 
     /* 11 - Register-direct addressing mode. */
@@ -32,42 +33,42 @@ void x64modrm_fetch(x64emu_t *emu, x64instr_t *ins) {
     }
 }
 
-void *x64modrm_get_reg(x64emu_t *emu, x64instr_t *ins) {
+static inline void *x64modrm_get_reg(x64emu_t *emu, x64instr_t *ins) {
     return emu->regs + (ins->modrm.reg | (ins->rex.r << 3));
 }
 
-void *x64modrm_get_xmm(x64emu_t *emu, x64instr_t *ins) {
+static inline void *x64modrm_get_xmm(x64emu_t *emu, x64instr_t *ins) {
     return emu->xmm + (ins->modrm.reg | (ins->rex.r << 3));
 }
 
-void *x64modrm_get_mmx(x64emu_t *emu, x64instr_t *ins) {
+static inline void *x64modrm_get_mmx(x64emu_t *emu, x64instr_t *ins) {
     return emu->mmx + (ins->modrm.reg | (ins->rex.r << 3));
 }
 
 /* https://wiki.osdev.org/X86-64_Instruction_Encoding#32/64-bit_addressing_2 */
 
-static inline uint64_t sib_get_scaled_index(x64emu_t *emu, x64instr_t *ins) {
+static inline uint64_t x64sib_get_scaled_index(x64emu_t *emu, x64instr_t *ins) {
     return (!ins->rex.x && ins->sib.index == 4) ? 0 :
             (emu->regs[ins->sib.index | (ins->rex.x << 3)].uq[0] << ins->sib.scale);
 }
 
-static inline uint64_t sib_get_base(x64emu_t *emu, x64instr_t *ins) {
+static inline uint64_t x64sib_get_base(x64emu_t *emu, x64instr_t *ins) {
     return emu->regs[ins->sib.base | (ins->rex.b << 3)].uq[0];
 }
 
-static inline uint64_t sib_get_00(x64emu_t *emu, x64instr_t *ins) {
-    return sib_get_scaled_index(emu, ins) + ((ins->sib.base == 5) ? ins->displ.sd[0] : sib_get_base(emu, ins));
+static inline uint64_t x64sib_get_00(x64emu_t *emu, x64instr_t *ins) {
+    return x64sib_get_scaled_index(emu, ins) + ((ins->sib.base == 5) ? ins->displ.sd[0] : x64sib_get_base(emu, ins));
 }
 
-static inline uint64_t sib_get_01_10(x64emu_t *emu, x64instr_t *ins) {
-    return sib_get_scaled_index(emu, ins) + sib_get_base(emu, ins);
+static inline uint64_t x64sib_get_01_10(x64emu_t *emu, x64instr_t *ins) {
+    return x64sib_get_scaled_index(emu, ins) + x64sib_get_base(emu, ins);
 }
 
-static inline uint64_t get_base_rm(x64emu_t *emu, x64instr_t *ins) {
+static inline uint64_t x64modrm_get_base_rm(x64emu_t *emu, x64instr_t *ins) {
     return emu->regs[ins->modrm.rm | (ins->rex.b << 3)].uq[0];
 }
 
-void *x64modrm_get_indirect(x64emu_t *emu, x64instr_t *ins) {
+static inline void *x64modrm_get_indirect(x64emu_t *emu, x64instr_t *ins) {
     if (ins->address_sz) {
         log_err("32 bit addressing ModR/M still not covered.");
         return NULL;
@@ -80,38 +81,40 @@ void *x64modrm_get_indirect(x64emu_t *emu, x64instr_t *ins) {
             if (ins->modrm.rm == 5)           /* [RIP/EIP + disp32] */
                 return (void *)(r_rip + ins->displ.sd[0]);
             else if (ins->modrm.rm == 4)      /* [SIB] */
-                return (void *)sib_get_00(emu, ins);
+                return (void *)x64sib_get_00(emu, ins);
             else                              /* [r/m] */
-                return (void *)get_base_rm(emu, ins);
+                return (void *)x64modrm_get_base_rm(emu, ins);
 
         case 0x1:     /* 01 */                /* [(r/m or SIB) + disp8] */
-            return (void *)(((ins->modrm.rm == 4) ? sib_get_01_10(emu, ins) :
-                    get_base_rm(emu, ins)) + ins->displ.sb[0]);
+            return (void *)(((ins->modrm.rm == 4) ? x64sib_get_01_10(emu, ins) :
+                x64modrm_get_base_rm(emu, ins)) + ins->displ.sb[0]);
 
         case 0x2:     /* 10 */                /* [(r/m or SIB) + disp32] */
-            return (void *)(((ins->modrm.rm == 4) ? sib_get_01_10(emu, ins) :
-                    get_base_rm(emu, ins)) + ins->displ.sd[0]);
+            return (void *)(((ins->modrm.rm == 4) ? x64sib_get_01_10(emu, ins) :
+                x64modrm_get_base_rm(emu, ins)) + ins->displ.sd[0]);
     }
     return NULL;
 }
 
-void *x64modrm_get_r_m(x64emu_t *emu, x64instr_t *ins) {
+static inline void *x64modrm_get_r_m(x64emu_t *emu, x64instr_t *ins) {
     if (ins->modrm.mod == 3)
         return emu->regs + (ins->modrm.rm | (ins->rex.b << 3));
 
     return x64modrm_get_indirect(emu, ins);
 }
 
-void *x64modrm_get_xmm_m(x64emu_t *emu, x64instr_t *ins) {
+static inline void *x64modrm_get_xmm_m(x64emu_t *emu, x64instr_t *ins) {
     if (ins->modrm.mod == 3)
         return emu->xmm + (ins->modrm.rm | (ins->rex.b << 3));
 
     return x64modrm_get_indirect(emu, ins);
 }
 
-void *x64modrm_get_mmx_m(x64emu_t *emu, x64instr_t *ins) {
+static inline void *x64modrm_get_mmx_m(x64emu_t *emu, x64instr_t *ins) {
     if (ins->modrm.mod == 3)
         return emu->mmx + (ins->modrm.rm | (ins->rex.b << 3));
 
     return x64modrm_get_indirect(emu, ins);
 }
+
+#endif /* __X64MODRM_H_ */

@@ -2,17 +2,18 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "x64emu.h"
-#include "x64instr.h"
-#include "x64decode.h"
-#include "x64execute.h"
-#include "x64regs_private.h"
-#include "x64flags_private.h"
-#include "x64stack.h"
 #include "debug.h"
-#include "x64flags.h"
 
 SET_DEBUG_CHANNEL("X64EMU")
+
+#include "x64emu.h"
+#include "x64instr.h"
+#include "decode.h"
+#include "execute.h"
+#include "regs_private.h"
+#include "flags_private.h"
+#include "x64stack.h"
+#include "x64flags.h"
 
 bool x64emu_init(x64emu_t *emu, x64context_t *ctx) {
     if (!emu || !ctx) return false;

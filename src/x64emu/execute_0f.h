@@ -1,3 +1,5 @@
+#ifndef __X64EXECUTE_0F_H_
+#define __X64EXECUTE_0F_H_
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -5,12 +7,10 @@
 #include "debug.h"
 #include "x64emu.h"
 #include "x64instr.h"
-#include "x64execute.h"
-#include "x64regs_private.h"
-#include "x64execute_private.h"
-#include "x64modrm.h"
-
-SET_DEBUG_CHANNEL("X64EXECUTE_0F")
+#include "regs_private.h"
+#include "execute_private.h"
+#include "modrm.h"
+#include "syscall.h"
 
 #define DEST_XMM_SRC_XMM_M() \
     reg128_t *dest = (reg128_t *)x64modrm_get_xmm(emu, ins); \
@@ -40,7 +40,7 @@ SET_DEBUG_CHANNEL("X64EXECUTE_0F")
         dest->u ## op_type[i * 2 + 1] = src->u ## op_type[i + times]; \
     }
 
-bool x64execute_0f(x64emu_t *emu, x64instr_t *ins) {
+static inline bool x64execute_0f(x64emu_t *emu, x64instr_t *ins) {
     uint8_t op = ins->opcode[1];
 
     switch (op) {
@@ -282,3 +282,5 @@ bool x64execute_0f(x64emu_t *emu, x64instr_t *ins) {
     }
     return true;
 }
+
+#endif /* __X64EXECUTE_0F_H_ */
