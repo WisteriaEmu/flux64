@@ -58,7 +58,7 @@ static inline bool x64execute_83(x64emu_t *emu, x64instr_t *ins) {
 
 static inline bool x64execute_c0(x64emu_t *emu, x64instr_t *ins) {
     void *dest = x64modrm_get_r_m(emu, ins);
-#define CASE_OP(oper) oper(int8_t, uint8_t, ins->imm.byte[0])
+#define CASE_OP(oper) oper(int8_t, uint8_t, ins->imm.ub[0])
     switch (ins->modrm.reg) { OPCODE_EXT_CASE(CASE_OP) }
 #undef CASE_OP
     return true;
@@ -67,7 +67,7 @@ static inline bool x64execute_c0(x64emu_t *emu, x64instr_t *ins) {
 static inline bool x64execute_c1(x64emu_t *emu, x64instr_t *ins) {
     void *dest = x64modrm_get_r_m(emu, ins);
 #define CASE_OP(oper) \
-    DEST_OP2_16_32_64(oper, ins->imm.byte[0], ins->imm.byte[0], ins->imm.byte[0])
+    DEST_OP2_16_32_64(oper, ins->imm.ub[0], ins->imm.ub[0], ins->imm.ub[0])
     switch (ins->modrm.reg) { OPCODE_EXT_CASE(CASE_OP) }
 #undef CASE_OP
     return true;
@@ -291,21 +291,21 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
 
         case 0x68:            /* PUSH imm16/32 */
             if (ins->operand_sz)
-                push_16(emu, ins->imm.sword[0]);
+                push_16(emu, ins->imm.sw[0]);
             else
-                push_64(emu, (int64_t)ins->imm.sdword[0]);
+                push_64(emu, (int64_t)ins->imm.sd[0]);
             break;
 
         case 0x6A:            /* PUSH imm8 */
             if (ins->operand_sz)
-                push_16(emu, (int16_t)ins->imm.sbyte[0]);
+                push_16(emu, (int16_t)ins->imm.sb[0]);
             else
-                push_64(emu, (int64_t)ins->imm.sbyte[0]);
+                push_64(emu, (int64_t)ins->imm.sb[0]);
             break;
 
         case 0x70 ... 0x7F:   /* Jcc rel8 */
             if (x64execute_jmp_cond(emu, ins, op))
-                r_rip += (int64_t)ins->imm.sbyte[0];
+                r_rip += (int64_t)ins->imm.sb[0];
             break;
 
         case 0x80:            /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m8,imm8 */
@@ -463,7 +463,7 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
                 r_eip = pop_32(emu);
             else
                 r_rip = pop_64(emu);
-            r_rsp += (uint64_t)ins->imm.word[0];
+            r_rsp += (uint64_t)ins->imm.uw[0];
             break;
 
         case 0xC3:            /* RET */
@@ -518,15 +518,15 @@ bool x64execute(x64emu_t *emu, x64instr_t *ins) {
                 push_32(emu, r_eip);
             else
                 push_64(emu, r_rip);
-            r_rip += (int64_t)ins->imm.sdword[0];
+            r_rip += (int64_t)ins->imm.sd[0];
             break;
 
         case 0xE9:            /* JMP rel32 */
-            r_rip += (int64_t)ins->imm.sdword[0];
+            r_rip += (int64_t)ins->imm.sd[0];
             break;
 
         case 0xEB:            /* JMP rel8 */
-            r_rip += (int64_t)ins->imm.sbyte[0];
+            r_rip += (int64_t)ins->imm.sb[0];
             break;
 
         case 0xF5:            /* CMC */

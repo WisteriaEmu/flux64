@@ -1,5 +1,6 @@
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "debug.h"
 #include "x64emu.h"
@@ -7,6 +8,7 @@
 #include "x64decode.h"
 #include "x64modrm.h"
 #include "x64regs_private.h"
+#include "x64decode_private.h"
 
 SET_DEBUG_CHANNEL("X64DECODE_0F")
 
@@ -37,7 +39,7 @@ bool x64decode_0f(x64emu_t *emu, x64instr_t *ins) {
 
         case 0x70 ... 0x73:   /* sse1/sse2/mmx opcodes. */
             x64modrm_fetch(emu, ins);
-            ins->imm.byte[0] = fetch_8(emu, ins);
+            FETCH_IMM_8()
             break;
 
         case 0x74 ... 0x77:   /* sse2/mmx opcodes. */
@@ -49,10 +51,7 @@ bool x64decode_0f(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0x80 ... 0x8F:   /* Jcc rel16/32 */
-            if (ins->operand_sz)
-                ins->imm.word[0] = fetch_16(emu, ins);
-            else
-                ins->imm.dword[0] = fetch_32(emu, ins);
+            FETCH_IMM_16_32()
             break;
 
         case 0x90 ... 0x9F:   /* SETcc r/m8 */

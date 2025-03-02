@@ -5,8 +5,8 @@
 
 /** RFLAGS - 8 byte register. */
 typedef union {
-    uint64_t qword[1];
-    uint32_t dword[2];
+    uint64_t uq[1]; /* unsigned qword */
+    uint32_t ud[2]; /* unsigned dword */
     struct {
         uint64_t CF   : 1;  /*     0  Carry Flag */
         uint64_t      : 1;  /*     1  Reserved */

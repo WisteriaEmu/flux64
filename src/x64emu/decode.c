@@ -7,6 +7,7 @@
 #include "x64emu.h"
 #include "x64modrm.h"
 #include "x64regs_private.h"
+#include "x64decode_private.h"
 
 SET_DEBUG_CHANNEL("X64DECODE")
 
@@ -81,24 +82,6 @@ static inline uint8_t decode_prefixes(x64emu_t *emu, x64instr_t *ins) {
     }
 }
 
-/** Fetch 16 or 32 bits based on 66H prefix. */
-static inline void fetch_imm_16_32_32(x64emu_t *emu, x64instr_t *ins) {
-    if (ins->operand_sz)
-        ins->imm.word[0]  = fetch_16(emu, ins);
-    else
-        ins->imm.dword[0] = fetch_32(emu, ins);
-}
-
-/** Fetch 16, 32 or 64 bits based on REX.W and 66H prefix. */
-static inline void fetch_imm_16_32_64(x64emu_t *emu, x64instr_t *ins) {
-    if (ins->rex.w)
-        ins->imm.qword[0] = fetch_64(emu, ins);
-    else if (ins->operand_sz)
-        ins->imm.word[0]  = fetch_16(emu, ins);
-    else
-        ins->imm.dword[0] = fetch_32(emu, ins);
-}
-
 bool x64decode(x64emu_t *emu, x64instr_t *ins) {
     ins->opcode[0] = decode_prefixes(emu, ins);
 
@@ -114,10 +97,10 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             x64modrm_fetch(emu, ins); \
             break; \
         case start + 0x04:    /* al,imm8 */ \
-            ins->imm.byte[0] = fetch_8(emu, ins); \
+            FETCH_IMM_8() \
             break; \
-        case start + 0x05:    /* ax/eax/rax,imm16/32/32 */ \
-            fetch_imm_16_32_32(emu, ins); \
+        case start + 0x05:    /* ax/eax/rax,imm16/32 */ \
+            FETCH_IMM_16_32() \
             break;
 
         OPCODE_FAMILY(0x00)   /* 00..05 ADD */
@@ -138,35 +121,35 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
         case 0x50 ... 0x5F:   /* PUSH/POP+r16/32/64 */
             break;
 
-        case 0x63:            /* MOVSXD r16/32/64,r/m16/32/32 */
+        case 0x63:            /* MOVSXD r16/32/64,r/m16/32 */
             x64modrm_fetch(emu, ins);
             break;
 
         case 0x68:            /* PUSH imm16/32 */
-            fetch_imm_16_32_32(emu, ins);
+            FETCH_IMM_16_32()
             break;
 
         case 0x6A:            /* PUSH imm8 */
-            ins->imm.byte[0] = fetch_8(emu, ins);
+            FETCH_IMM_8()
             break;
 
         case 0x70 ... 0x7F:   /* Jcc rel8 */
-            ins->imm.byte[0] = fetch_8(emu, ins);
+            FETCH_IMM_8()
             break;
 
         case 0x80:            /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m8,imm8 */
             x64modrm_fetch(emu, ins);
-            ins->imm.byte[0] = fetch_8(emu, ins);
+            FETCH_IMM_8()
             break;
 
-        case 0x81:            /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m16/32/64,imm16/32/32 */
+        case 0x81:            /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m16/32/64,imm16/32 */
             x64modrm_fetch(emu, ins);
-            fetch_imm_16_32_32(emu, ins);
+            FETCH_IMM_16_32()
             break;
 
         case 0x83:            /* ADD/OR/ADC/SBB/AND/SUB/XOR/CMP r/m16/32/64,imm8 */
             x64modrm_fetch(emu, ins);
-            ins->imm.byte[0] = fetch_8(emu, ins);
+            FETCH_IMM_8()
             break;
 
         case 0x84:            /* TEST r/m8,r8 */
@@ -198,31 +181,31 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0xA8:            /* TEST imm8 */
-            ins->imm.byte[0] = fetch_8(emu, ins);
+            FETCH_IMM_8()
             break;
 
         case 0xA9:            /* TEST imm16/32 */
-            fetch_imm_16_32_32(emu, ins);
+            FETCH_IMM_16_32()
             break;
 
         case 0xAA ... 0xAB:   /* STOS m8/16/32/64 */
             break;
 
         case 0xB0 ... 0xB7:   /* MOV+r8 imm8 */
-            ins->imm.byte[0] = fetch_8(emu, ins);
+            FETCH_IMM_8()
             break;
 
         case 0xB8 ... 0xBF:   /* MOV+r16/32/64 imm16/32/64 */
-            fetch_imm_16_32_64(emu, ins);
+            FETCH_IMM_16_32_64()
             break;
 
         case 0xC0 ... 0xC1:   /* rotate/shift r/m8/16/32/64,imm8 */
             x64modrm_fetch(emu, ins);
-            ins->imm.byte[0] = fetch_8(emu, ins);
+            FETCH_IMM_8()
             break;
 
         case 0xC2:            /* RET imm16 */
-            ins->imm.word[0] = fetch_16(emu, ins);
+            FETCH_IMM_16()
             break;
 
         case 0xC3:            /* RET */
@@ -230,12 +213,12 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
 
         case 0xC6:            /* MOV r/m8,imm8 */
             x64modrm_fetch(emu, ins);
-            ins->imm.byte[0] = fetch_8(emu, ins);
+            FETCH_IMM_8()
             break;
 
-        case 0xC7:            /* MOV r/m16/32/64,imm16/32/32 */
+        case 0xC7:            /* MOV r/m16/32/64,imm16/32 */
             x64modrm_fetch(emu, ins);
-            fetch_imm_16_32_32(emu, ins);
+            FETCH_IMM_16_32()
             break;
 
         case 0xC9:            /* LEAVE */
@@ -246,12 +229,11 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0xE8 ... 0xE9:   /* CALL/JMP rel32 */
-            /* rel32 is immediate data */
-            ins->imm.dword[0] = fetch_32(emu, ins);
+            FETCH_IMM_32()
             break;
 
         case 0xEB:            /* JMP rel8 */
-            ins->imm.byte[0] = fetch_8(emu, ins);
+            FETCH_IMM_8()
             break;
 
         case 0xF5:            /* CMC */
@@ -259,14 +241,12 @@ bool x64decode(x64emu_t *emu, x64instr_t *ins) {
 
         case 0xF6:            /* TEST/NOT/NEG/MUL/IMUL/DIV/IDIV r/m8,imm8 */
             x64modrm_fetch(emu, ins);
-            if (ins->modrm.reg <= 1)
-                ins->imm.byte[0] = fetch_8(emu, ins);
+            if (ins->modrm.reg <= 1) { FETCH_IMM_8() }
             break;
 
-        case 0xF7:            /* TEST/NOT/NEG/MUL/IMUL/DIV/IDIV r/m16/32/64,imm16/32/32 */
+        case 0xF7:            /* TEST/NOT/NEG/MUL/IMUL/DIV/IDIV r/m16/32/64,imm16/32 */
             x64modrm_fetch(emu, ins);
-            if (ins->modrm.reg <= 1)
-                fetch_imm_16_32_32(emu, ins);
+            if (ins->modrm.reg <= 1) { FETCH_IMM_16_32() }
             break;
 
         case 0xF8 ... 0xFD:   /* CLC/STC/CLI/STI/CLD/STD */

@@ -21,13 +21,13 @@ void x64modrm_fetch(x64emu_t *emu, x64instr_t *ins) {
     switch (ins->modrm.mod) {
         case 0x0: /* 00 */
             if (ins->modrm.rm == 5 || (ins->modrm.rm == 4 && ins->sib.base == 5))
-                ins->displ.dword[0] = fetch_32(emu, ins);
+                ins->displ.ud[0] = fetch_32(emu, ins);
             break;
         case 0x1: /* 01 */
-            ins->displ.byte[0] = fetch_8(emu, ins);
+            ins->displ.ub[0] = fetch_8(emu, ins);
             break;
         case 0x2: /* 10 */
-            ins->displ.dword[0] = fetch_32(emu, ins);
+            ins->displ.ud[0] = fetch_32(emu, ins);
             break;
     }
 }
@@ -44,15 +44,15 @@ void *x64modrm_get_xmm(x64emu_t *emu, x64instr_t *ins) {
 
 static inline uint64_t sib_get_scaled_index(x64emu_t *emu, x64instr_t *ins) {
     return (!ins->rex.x && ins->sib.index == 4) ? 0 :
-            (emu->regs[ins->sib.index | (ins->rex.x << 3)].qword[0] << ins->sib.scale);
+            (emu->regs[ins->sib.index | (ins->rex.x << 3)].uq[0] << ins->sib.scale);
 }
 
 static inline uint64_t sib_get_base(x64emu_t *emu, x64instr_t *ins) {
-    return emu->regs[ins->sib.base | (ins->rex.b << 3)].qword[0];
+    return emu->regs[ins->sib.base | (ins->rex.b << 3)].uq[0];
 }
 
 static inline uint64_t sib_get_00(x64emu_t *emu, x64instr_t *ins) {
-    return sib_get_scaled_index(emu, ins) + ((ins->sib.base == 5) ? ins->displ.sdword[0] : sib_get_base(emu, ins));
+    return sib_get_scaled_index(emu, ins) + ((ins->sib.base == 5) ? ins->displ.sd[0] : sib_get_base(emu, ins));
 }
 
 static inline uint64_t sib_get_01_10(x64emu_t *emu, x64instr_t *ins) {
@@ -60,7 +60,7 @@ static inline uint64_t sib_get_01_10(x64emu_t *emu, x64instr_t *ins) {
 }
 
 static inline uint64_t get_base_rm(x64emu_t *emu, x64instr_t *ins) {
-    return emu->regs[ins->modrm.rm | (ins->rex.b << 3)].qword[0];
+    return emu->regs[ins->modrm.rm | (ins->rex.b << 3)].uq[0];
 }
 
 void *x64modrm_get_indirect(x64emu_t *emu, x64instr_t *ins) {
@@ -74,7 +74,7 @@ void *x64modrm_get_indirect(x64emu_t *emu, x64instr_t *ins) {
     switch (ins->modrm.mod) {
         case 0x0:     /* 00 */
             if (ins->modrm.rm == 5)           /* [RIP/EIP + disp32] */
-                return (void *)(r_rip + ins->displ.sdword[0]);
+                return (void *)(r_rip + ins->displ.sd[0]);
             else if (ins->modrm.rm == 4)      /* [SIB] */
                 return (void *)sib_get_00(emu, ins);
             else                              /* [r/m] */
@@ -82,11 +82,11 @@ void *x64modrm_get_indirect(x64emu_t *emu, x64instr_t *ins) {
 
         case 0x1:     /* 01 */                /* [(r/m or SIB) + disp8] */
             return (void *)(((ins->modrm.rm == 4) ? sib_get_01_10(emu, ins) :
-                    get_base_rm(emu, ins)) + ins->displ.sbyte[0]);
+                    get_base_rm(emu, ins)) + ins->displ.sb[0]);
 
         case 0x2:     /* 10 */                /* [(r/m or SIB) + disp32] */
             return (void *)(((ins->modrm.rm == 4) ? sib_get_01_10(emu, ins) :
-                    get_base_rm(emu, ins)) + ins->displ.sdword[0]);
+                    get_base_rm(emu, ins)) + ins->displ.sd[0]);
     }
     return NULL;
 }

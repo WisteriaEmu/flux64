@@ -7,36 +7,34 @@ typedef __int128_t  int128_t;
 typedef __uint128_t uint128_t;
 
 typedef union {
-    int64_t  sqword[1];
-    uint64_t qword[1];
-    int32_t  sdword[2];
-    uint32_t dword[2];
-    int16_t  sword[4];
-    uint16_t word[4];
-    int8_t   sbyte[8];
-    uint8_t  byte[8];
+    int64_t  sq[1]; /*   signed qword */
+    uint64_t uq[1]; /* unsigned qword */
+
+    int32_t  sd[2]; /*   signed dword */
+    uint32_t ud[2]; /* unsigned dword */
+
+    int16_t  sw[4]; /*   signed word */
+    uint16_t uw[4]; /* unsigned word */
+
+    int8_t   sb[8]; /*   signed byte */
+    uint8_t  ub[8]; /* unsigned byte */
 } reg64_t;
 
 typedef union {
-    int128_t  soword[1];
-    uint128_t oword[1];
-    int64_t   sqword[2];
-    uint64_t  qword[2];
-    int32_t   sdword[4];
-    uint32_t  dword[4];
-    int16_t   sword[8];
-    uint16_t  word[8];
-    int8_t    sbyte[16];
-    uint8_t   byte[16];
-} reg128_t;
+    int128_t  so[1]; /*   signed oword */
+    uint128_t uo[1]; /* unsigned oword */
 
-/*typedef union {
-    int32_t  sdword[1];
-    uint32_t dword[1];
-    int16_t  sword[2];
-    uint16_t word[2];
-    int8_t   sbyte[4];
-    uint8_t  byte[4];
-} reg32_t;*/
+    int64_t  sq[2]; /*   signed qword */
+    uint64_t uq[2]; /* unsigned qword */
+
+    int32_t  sd[4]; /*   signed dword */
+    uint32_t ud[4]; /* unsigned dword */
+
+    int16_t  sw[8]; /*   signed word */
+    uint16_t uw[8]; /* unsigned word */
+
+    int8_t   sb[16]; /*   signed byte */
+    uint8_t  ub[16]; /* unsigned byte */
+} reg128_t;
 
 #endif /* __X64REGS_H_ */
