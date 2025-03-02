@@ -40,6 +40,10 @@ void *x64modrm_get_xmm(x64emu_t *emu, x64instr_t *ins) {
     return emu->xmm + (ins->modrm.reg | (ins->rex.r << 3));
 }
 
+void *x64modrm_get_mmx(x64emu_t *emu, x64instr_t *ins) {
+    return emu->mmx + (ins->modrm.reg | (ins->rex.r << 3));
+}
+
 /* https://wiki.osdev.org/X86-64_Instruction_Encoding#32/64-bit_addressing_2 */
 
 static inline uint64_t sib_get_scaled_index(x64emu_t *emu, x64instr_t *ins) {
@@ -101,6 +105,13 @@ void *x64modrm_get_r_m(x64emu_t *emu, x64instr_t *ins) {
 void *x64modrm_get_xmm_m(x64emu_t *emu, x64instr_t *ins) {
     if (ins->modrm.mod == 3)
         return emu->xmm + (ins->modrm.rm | (ins->rex.b << 3));
+
+    return x64modrm_get_indirect(emu, ins);
+}
+
+void *x64modrm_get_mmx_m(x64emu_t *emu, x64instr_t *ins) {
+    if (ins->modrm.mod == 3)
+        return emu->mmx + (ins->modrm.rm | (ins->rex.b << 3));
 
     return x64modrm_get_indirect(emu, ins);
 }

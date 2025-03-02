@@ -15,6 +15,7 @@ typedef struct {
     reg64_t       regs[16]; /* 16 general-purpose registers. */
     reg64_t       rip;      /* Instruction pointer. */
     x64flags_t    flags;    /* RFLAGS register. */
+    reg64_t       mmx[16];  /* 16 MMX registers. */
     reg128_t      xmm[16];  /* 16 XMM registers. */
 } x64emu_t;
 

@@ -42,7 +42,7 @@ bool x64decode_0f(x64emu_t *emu, x64instr_t *ins) {
             FETCH_IMM_8()
             break;
 
-        case 0x74 ... 0x77:   /* sse2/mmx opcodes. */
+        case 0x74 ... 0x76:   /* sse2/mmx opcodes. */
             x64modrm_fetch(emu, ins);
             break;
 
