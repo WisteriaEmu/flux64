@@ -106,7 +106,7 @@ bool x64execute_0f(x64emu_t *emu, x64instr_t *ins) {
 
         case 0x40 ... 0x4F:   /* CMOVcc r16/32/64,r/m16/32/64 */
             if (x64execute_jmp_cond(emu, ins, op))
-                OPERATION_16_32_64(REG, R_M, OP_UNSIGNED_MOV, U_64)
+                OP2_16_32_64(REG, R_M, OP_U_MOV, U_64)
             break;
 
         case 0x6E:            /* MOVD/MOVQ mm/xmm,r/m32/64 */
@@ -148,11 +148,11 @@ bool x64execute_0f(x64emu_t *emu, x64instr_t *ins) {
             break;
 
         case 0xB6:            /* MOVZX r16/32/64,r/m8 */
-            OPERATION_16_32_64(REG, R_M, OP_UNSIGNED_MOV, U_8)
+            OP2_16_32_64(REG, R_M, OP_U_MOV, U_8)
             break;
 
         case 0xB7:            /* MOVZX r16/32/64,r/m16 */
-            OPERATION_16_32_64(REG, R_M, OP_UNSIGNED_MOV, U_16)
+            OP2_16_32_64(REG, R_M, OP_U_MOV, U_16)
             break;
 
         default:
